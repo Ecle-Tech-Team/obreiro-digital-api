@@ -51,4 +51,34 @@ routes.put('/:id_pedido/responder', async (request, response) => {
     }
 });
 
+routes.get('/count/entregue', async (request, response) => {
+    try {
+        const totalPedidosEntregues = await db.countPedidosEntregues();
+        response.status(200).json(totalPedidosEntregues);
+    } catch (error) {
+        console.error('Erro ao contar pedidos entregues:', error);
+        response.status(500).json({ error: 'Erro na requisição!' });
+    }
+});
+
+routes.get('/count/em-andamento', async (request, response) => {
+    try {
+        const totalPedidosEmAndamento = await db.countPedidosEmAndamento();
+        response.status(200).json(totalPedidosEmAndamento);
+    } catch (error) {
+        console.error('Erro ao contar pedidos em andamento:', error);
+        response.status(500).json({ error: 'Erro na requisição!' });
+    }
+});
+
+routes.get('/count/recusados', async (request, response) => {
+    try {
+        const totalPedidosRecusados = await db.countPedidosRecusados();
+        response.status(200).json(totalPedidosRecusados);
+    } catch (error) {
+        console.error('Erro ao contar pedidos recusados:', error);
+        response.status(500).json({ error: 'Erro na requisição!' });
+    }
+});
+
 export default routes;

@@ -65,5 +65,49 @@ async function updatePedidos(id_pedido, nome_produto, categoria_produto, quantid
     conn.end();
 }
 
+async function countPedidosEntregues() {
+    const sql = "SELECT COUNT(*) as total FROM pedidos WHERE status_pedido = 'Entregue'";
 
-export default { createPedido, responderPedido, selectPedidos, updatePedidos };
+    const conn = await banco.connect();
+    
+    try {
+        const [rows] = await conn.query(sql);
+        return rows[0].total;
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
+
+async function countPedidosEmAndamento() {
+    const sql = "SELECT COUNT(*) as total FROM pedidos WHERE status_pedido = 'Em Andamento'";
+
+    const conn = await banco.connect();
+    
+    try {
+        const [rows] = await conn.query(sql);
+        return rows[0].total;
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
+
+async function countPedidosRecusados() {
+    const sql = "SELECT COUNT(*) as total FROM pedidos WHERE status_pedido = 'Recusado'";
+
+    const conn = await banco.connect();
+    
+    try {
+        const [rows] = await conn.query(sql);
+        return rows[0].total;
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
+
+export default { createPedido, responderPedido, selectPedidos, updatePedidos, countPedidosEntregues, countPedidosEmAndamento, countPedidosRecusados };
