@@ -81,4 +81,14 @@ routes.get('/count/recusados', async (request, response) => {
     }
 });
 
+routes.get('/count/total', async (request, response) => {
+    try {
+        const totalPedidos = await db.countPedidosTotais();
+        response.status(200).json(totalPedidos);
+    } catch (error) {
+        console.error('Erro ao contar pedidos totais:', error);
+        response.status(500).json({ error: 'Erro na requisição!' });
+    }
+});
+
 export default routes;

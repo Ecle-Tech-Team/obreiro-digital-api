@@ -8,7 +8,7 @@ async function createPedido(nome_produto, categoria_produto, quantidade, data_pe
     const conn = await banco.connect();
     await conn.query(sql, values);
     conn.end();      
-}
+};
 
 async function responderPedido(id_pedido, status_pedido, data_entrega, motivo_recusa) {
     const conn = await banco.connect();
@@ -43,7 +43,7 @@ async function responderPedido(id_pedido, status_pedido, data_entrega, motivo_re
     } finally {
         conn.end();
     }
-}
+};
 
 async function selectPedidos() {
     const sql = "SELECT * FROM pedidos";
@@ -53,7 +53,7 @@ async function selectPedidos() {
     conn.end();
 
     return rows;
-}
+};
 
 async function updatePedidos(id_pedido, nome_produto, categoria_produto, quantidade, data_pedido, status_pedido) {
     const sql = "UPDATE pedidos SET nome_produto = ?, categoria_produto = ?, quantidade = ?, data_pedido = ?, status_pedido = ? WHERE id_pedido = ?";
@@ -63,7 +63,7 @@ async function updatePedidos(id_pedido, nome_produto, categoria_produto, quantid
     const conn = await banco.connect();
     await conn.query(sql, values);
     conn.end();
-}
+};
 
 async function countPedidosEntregues() {
     const sql = "SELECT COUNT(*) as total FROM pedidos WHERE status_pedido = 'Entregue'";
@@ -78,7 +78,7 @@ async function countPedidosEntregues() {
     } finally {
         conn.end();
     }
-}
+};
 
 async function countPedidosEmAndamento() {
     const sql = "SELECT COUNT(*) as total FROM pedidos WHERE status_pedido = 'Em Andamento'";
@@ -93,7 +93,7 @@ async function countPedidosEmAndamento() {
     } finally {
         conn.end();
     }
-}
+};
 
 async function countPedidosRecusados() {
     const sql = "SELECT COUNT(*) as total FROM pedidos WHERE status_pedido = 'Recusado'";
@@ -108,6 +108,21 @@ async function countPedidosRecusados() {
     } finally {
         conn.end();
     }
+};
+
+async function countPedidosTotais() {
+    const sql = "SELECT COUNT(*) as total FROM pedidos";
+
+    const conn = await banco.connect();
+
+    try {
+        const [rows] = await conn.query(sql);
+        return rows[0].total;
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
 }
 
-export default { createPedido, responderPedido, selectPedidos, updatePedidos, countPedidosEntregues, countPedidosEmAndamento, countPedidosRecusados };
+export default { createPedido, responderPedido, selectPedidos, updatePedidos, countPedidosEntregues, countPedidosEmAndamento, countPedidosRecusados, countPedidosTotais };
