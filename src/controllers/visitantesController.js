@@ -42,5 +42,15 @@ routes.get('/', async (request, response) => {
     } catch (error){
         response.status(500).send(`Erro na requisição! ${error}`);
     }
-})
+});
+
+routes.get('/count', async (request, response) => {
+    try {
+        const totalVisitantes = await db.countVisitantes();
+        response.status(200).send(totalVisitantes);
+    } catch (error) {
+        response.status(500).send(`Erro na requisição! ${error}`);
+    }
+});
+
 export default routes;

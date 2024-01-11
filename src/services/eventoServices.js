@@ -30,4 +30,19 @@ async function updateEvento(id_evento, nome, data_inicio, horario_inicio, data_f
     conn.end();
 }
 
-export default { createEvento, selectEventos, updateEvento };
+async function countEventos() {
+    const sql = "SELECT COUNT(*) as total FROM eventos";
+
+    const conn = await banco.connect();
+    
+    try {
+        const [rows] = await conn.query(sql);
+        return rows[0];
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
+
+export default { createEvento, selectEventos, updateEvento, countEventos };

@@ -37,4 +37,13 @@ routes.put('/:id_evento', async (request, response) => {
     }
 });
 
+routes.get('/count', async (request, response) => {
+    try {
+        const totalEventos = await db.countEventos();
+        response.status(200).send(totalEventos);
+    } catch (error) {
+        response.status(500).send(`Erro na requisição! ${error}`);
+    }
+});
+
 export default routes;

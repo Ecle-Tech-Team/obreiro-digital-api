@@ -16,6 +16,15 @@ routes.post('/', async (request, response) => {
     }
 });
 
+routes.get('/count', async (request, response) => {
+    try {
+        const totalMembros = await db.countMembros();
+        response.status(200).send(totalMembros);
+    } catch (error) {
+        response.status(500).send(`Erro na requisição! ${error}`);
+    }
+});
+
 routes.put('/:id_membro', async (request, response) => {
     try {
         const { id_membro } = request.params;

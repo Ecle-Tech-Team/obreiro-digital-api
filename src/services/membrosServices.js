@@ -21,6 +21,21 @@ async function selectDepartamentos() {
     return rows;
 }
 
+async function countMembros() {
+    const sql = "SELECT COUNT(*) as total FROM membro";
+
+    const conn = await banco.connect();
+    
+    try {
+        const [rows] = await conn.query(sql);
+        return rows[0];
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
+
 async function updateMembro(id_membro, cod_membro, nome, numero, birth, novo_convertido, depart) {
     const sql = "UPDATE membro SET cod_membro = ?, nome = ?, numero = ?, birth = ?, novo_convertido = ?, id_departamento = ? WHERE id_membro = ?";
     
@@ -67,4 +82,4 @@ async function selectMembroOnly(id_membro) {
     }
 }
 
-export default {createMembro, updateMembro, selectMembro, selectMembroOnly, selectDepartamentos};
+export default {createMembro, countMembros, updateMembro, selectMembro, selectMembroOnly, selectDepartamentos};
