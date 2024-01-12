@@ -20,7 +20,7 @@ async function createFinancas(tipo, categoria, valor, descricao, data) {
 }
 
 async function updateSaldoEntrada(valor) {
-    const sql = 'UPDATE saldoSET saldo_atual = saldo_atual + ? WHERE id_saldo = 1';
+    const sql = 'UPDATE saldo SET saldo_atual = saldo_atual + ? WHERE id_saldo = 1';
 
     const values = [valor];
 
@@ -73,4 +73,4 @@ async function updateFinancas(id_financas, tipo, categoria, valor, descricao, da
     conn.end();      
 }
 
-export default { createFinancas, getFinancas, getSaldo, updateFinancas };
+export default { createFinancas, getFinancas, getSaldo, updateFinancas, updateSaldoEntrada, updateSaldoSaida };

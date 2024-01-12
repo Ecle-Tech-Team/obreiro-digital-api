@@ -1,12 +1,12 @@
-DROP DATABASE IF EXISTS obreiro_digital;
+DROP DATABASE IF EXISTS railway;
 
-CREATE DATABASE obreiro_digital;
+CREATE DATABASE railway;
 
-USE obreiro_digital;
+USE railway;
 
 CREATE TABLE user (
     id_user INT AUTO_INCREMENT PRIMARY KEY,
-    cod_membro TEXT UNIQUE NOT NULL,
+    cod_membro VARCHAR(16) UNIQUE NOT NULL,
     nome VARCHAR(150) NOT NULL,
     email VARCHAR(150) NOT NULL,
     senha VARCHAR(16) NOT NULL,
@@ -23,9 +23,9 @@ CREATE TABLE departamentos (
 
 CREATE TABLE membro (
     id_membro INT AUTO_INCREMENT PRIMARY KEY,
-    cod_membro TEXT UNIQUE NOT NULL,
+    cod_membro VARCHAR(16) UNIQUE NOT NULL,
     nome VARCHAR(150) NOT NULL,
-    numero INT(20),
+    numero INT(25),
     birth DATE NOT NULL,
     novo_convertido ENUM('Sim', 'Não') NOT NULL,
     id_departamento INT,
@@ -104,9 +104,6 @@ INSERT INTO user (cod_membro, nome, email, senha, birth, cargo)
 INSERT INTO departamentos(nome, birth, data_congresso)
 	VALUES ('Missões', '1978-11-03', '2024-10-10'); 
     
-INSERT INTO membro(cod_membro, nome, numero, birth, novo_convertido, id_departamento) 
-	VALUES ('1', 'Lucas', '11998520702', '2004-10-23', 'Não', 1);
-
 INSERT INTO saldo (saldo_atual, data_atualizacao) VALUES (0, CURDATE());
 
 select * from eventos;
