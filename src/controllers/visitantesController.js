@@ -47,9 +47,9 @@ routes.get('/', async (request, response) => {
 routes.get('/count', async (request, response) => {
     try {
         const totalVisitantes = await db.countVisitantes();
-        response.status(200).send(totalVisitantes);
+        response.status(200).json(totalVisitantes);
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).json(`Erro na requisição! ${error}`);
     }
 });
 

@@ -40,9 +40,9 @@ routes.put('/:id_evento', async (request, response) => {
 routes.get('/count', async (request, response) => {
     try {
         const totalEventos = await db.countEventos();
-        response.status(200).send(totalEventos);
+        response.status(200).json(totalEventos);
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).json(`Erro na requisição! ${error}`);
     }
 });
 

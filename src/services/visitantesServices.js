@@ -44,7 +44,7 @@ async function countVisitantes() {
   
   try {
     const [rows] = await conn.query(sql);
-    return rows[0];
+    return rows[0].total;
   } catch (error) {
       throw error;
   } finally {
