@@ -1,5 +1,6 @@
 import express from 'express';
 import db from '../services/loginService.js';
+import { generateToken } from '../helpers/userFeatures.js';
 
 const routes = express.Router();
 
@@ -10,7 +11,12 @@ routes.post('/', async (request, response) => {
         const user = await db.login(email, senha);
         
         if (user.length > 0) {
-            response.status(201).send({message:"Login efetuado com sucesso.", user});
+            const id_igreja = user.id_igreja;
+            
+            const token = generateToken(user.id_user, user.email, id_igreja);
+            
+            console.log(token) 
+            response.status(201).send({ message:"Login efetuado com sucesso.", user, token });
 
             return true;
         }

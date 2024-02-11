@@ -5,9 +5,9 @@ const routes = express.Router();
 
 routes.post('/', async (request, response) => {
     try{
-        const{nome, birth, data_congresso}=request.body;
+        const{nome, birth, data_congresso, id_igreja}=request.body;
 
-        await db.createDepartamentos(nome, birth, data_congresso);
+        await db.createDepartamentos(nome, birth, data_congresso, id_igreja);
 
         response.status(201).send({message: "Cadastro realizado com sucesso."})
               
@@ -16,13 +16,13 @@ routes.post('/', async (request, response) => {
     }
 });
 
-routes.put('/:id_departamento', async (request, response) => {
+routes.put('/:id_departamento/:id_igreja', async (request, response) => {
     try {
-        const { id_departamento } = request.params;
+        const { id_departamento, id_igreja } = request.params;
         
         const { nome, birth, data_congresso } = request.body;
 
-        await db.updateDepartamento(id_departamento, nome, birth, data_congresso);
+        await db.updateDepartamento(id_departamento, nome, birth, data_congresso, id_igreja);
 
         response.status(200).send({ message: "Departamento atualizado com sucesso." });
     } catch (error) {
@@ -46,11 +46,20 @@ routes.get('/', async (request, response) => {
     }
 })
 
-routes.get('/:id_departamento', async (request, response) => {
+routes.get('/igreja', async (request, response) => {
     try {
-        const { id_departamento } = request.params;
+        const igrejas = await db.getIgrejas();
+        response.status(200).send(igrejas);
+    } catch (error) {
+        response.status(500).send(`Erro na requisição! ${error}`);
+    }
+});
 
-        const departamento = await db.selectDepartamento(id_departamento);
+routes.get('/:id_igreja', async (request, response) => {
+    try {
+        const { id_igreja } = request.params;
+
+        const departamento = await db.selectDepartamento(id_igreja);
 
         if (departamento) {
             response.status(201).send(departamento);

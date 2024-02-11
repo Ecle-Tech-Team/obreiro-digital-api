@@ -4,10 +4,10 @@ import db from '../services/cadastroService.js';
 const routes = express.Router();
 
 routes.post('/', async (request, response) => {
-    try{
-        const{cod_membro, nome, email, senha, birth, cargo}=request.body;
+    try {
+        const{ cod_membro, nome, email, senha, birth, cargo, id_igreja } = request.body;
 
-        await db.createUser(cod_membro, nome, email, senha, birth, cargo);
+        await db.createUser(cod_membro, nome, email, senha, birth, cargo, id_igreja);
 
         response.status(201).send({message: "Cadastro realizado com sucesso."})
               
@@ -20,11 +20,24 @@ routes.put('/:id_user', async (request, response) => {
     try {
         const { id_user } = request.params;
         
-        const { cod_membro, nome, email, senha, birth, cargo } = request.body;
+        const { cod_membro, nome, email, senha, birth, cargo, id_igreja } = request.body;
 
-        await db.updateUser(id_user, cod_membro, nome, email, senha, birth, cargo);
+        await db.updateUser(id_user, cod_membro, nome, email, senha, birth, cargo, id_igreja);
 
         response.status(200).send({ message: "Usuário atualizado com sucesso." });
+    } catch (error) {
+        response.status(500).send(`Erro na requisição! ${error}`);
+    }
+});
+
+routes.get('/cadastro', async (request, response) => {
+    console.log('Rota de cadastro acessada');
+    try{
+        const { id_igreja } = request.params;
+
+        const users = await db.selectUserIdIgreja(id_igreja);
+
+        response.status(200).send(users);
     } catch (error) {
         response.status(500).send(`Erro na requisição! ${error}`);
     }

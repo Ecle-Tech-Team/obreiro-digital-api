@@ -1,8 +1,21 @@
-DROP DATABASE IF EXISTS railway;
+DROP DATABASE IF EXISTS obreiro_digital;	
 
-CREATE DATABASE railway;
+CREATE DATABASE obreiro_digital;
 
-USE railway;
+USE obreiro_digital;
+
+CREATE TABLE igreja (
+	id_igreja INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(150) NOT NULL,
+    cnpj VARCHAR(20) NOT NULL,    
+    data_fundacao DATE,
+    setor VARCHAR(200),
+    ministerio VARCHAR(150),
+    cep VARCHAR(19) NOT NULL,
+    endereco VARCHAR(150) NOT NULL,
+    bairro VARCHAR(150) NOT NULL,
+    cidade VARCHAR(150) NOT NULL
+);
 
 CREATE TABLE user (
     id_user INT AUTO_INCREMENT PRIMARY KEY,
@@ -95,15 +108,56 @@ CREATE TABLE pedidos (
     respondido BOOLEAN NOT NULL DEFAULT false
 );
 
-INSERT INTO user (cod_membro, nome, email, senha, birth, cargo) 
-	VALUES ('1', 'Adilson', 'pastor@gmail.com', '123', '2004-10-23', 'Pastor');
+ALTER TABLE membro
+ADD COLUMN id_igreja INT,
+ADD CONSTRAINT fk_membros_igrejas FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja);
+
+ALTER TABLE departamentos
+ADD COLUMN id_igreja INT,
+ADD CONSTRAINT fk_departamentos_igrejas FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja);
+
+ALTER TABLE eventos
+ADD COLUMN id_igreja INT,
+ADD CONSTRAINT fk_eventos_igrejas FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja);
+
+ALTER TABLE user
+ADD COLUMN id_igreja INT,
+ADD CONSTRAINT fk_users_igrejas FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja);
+
+ALTER TABLE pedidos
+ADD COLUMN id_igreja INT,
+ADD CONSTRAINT fk_pedidos_igrejas FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja);
+
+ALTER TABLE estoque
+ADD COLUMN id_igreja INT,
+ADD CONSTRAINT fk_estoque_igrejas FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja);
+
+ALTER TABLE financas
+ADD COLUMN id_igreja INT,
+ADD CONSTRAINT fk_financas_igrejas FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja);
+
+ALTER TABLE visitante
+ADD COLUMN id_igreja INT,
+ADD CONSTRAINT fk_visitantes_igrejas FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja);
+
+ALTER TABLE saldo
+ADD COLUMN id_igreja INT,
+ADD CONSTRAINT fk_saldo_igrejas FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja);
+
+INSERT INTO igreja (nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade)
+VALUES ('Igreja Exemplo', '12345678901234', '2022-01-01', 'Setor Exemplo', 'Ministério Exemplo', '12345010', 'Rua Exemplo, 123', 'Bairro Exemplo', 'Cidade Exemplo');
+
+INSERT INTO user (cod_membro, nome, email, senha, birth, cargo, id_igreja) 
+	VALUES ('1', 'Adilson', 'pastor@gmail.com', '123', '2004-10-23', 'Pastor', 1);
     
-INSERT INTO user (cod_membro, nome, email, senha, birth, cargo) 
-	VALUES ('2', 'Samuel', 'obreiro@gmail.com', '123', '2004-10-23', 'Obreiro');
+INSERT INTO user (cod_membro, nome, email, senha, birth, cargo, id_igreja) 
+	VALUES ('2', 'Samuel', 'obreiro@gmail.com', '123', '2004-10-23', 'Obreiro', 1);
     
 INSERT INTO departamentos(nome, birth, data_congresso)
 	VALUES ('Missões', '1978-11-03', '2024-10-10'); 
     
 INSERT INTO saldo (saldo_atual, data_atualizacao) VALUES (0, CURDATE());
 
-select * from eventos;
+select * from user;
+SELECT * FROM user WHERE id_igreja = 1;
+SELECT * FROM membro WHERE id_igreja = 1;

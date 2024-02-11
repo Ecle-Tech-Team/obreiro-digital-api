@@ -5,9 +5,9 @@ const routes = express.Router();
 
 routes.post('/', async (request, response) => {
     try{
-        const{cod_membro, nome, numero, birth, novo_convertido, depart}=request.body;
+        const{cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_igreja}=request.body;
 
-        await db.createMembro(cod_membro, nome, numero, birth, novo_convertido, depart);
+        await db.createMembro(cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_igreja);
 
         response.status(201).send({message: "Cadastro realizado com sucesso."})
               
@@ -16,22 +16,25 @@ routes.post('/', async (request, response) => {
     }
 });
 
-routes.get('/count', async (request, response) => {
+routes.get('/count/:id_igreja', async (request, response) => {
     try {
-        const totalMembros = await db.countMembros();
+        const { id_igreja } = request.params;
+
+        const totalMembros = await db.countMembros(id_igreja);
+        
         response.status(200).json(totalMembros);
     } catch (error) {
         response.status(500).json(`Erro na requisição! ${error}`);
     }
 });
 
-routes.put('/:id_membro', async (request, response) => {
+routes.put('/:id_membro/:id_igreja', async (request, response) => {
     try {
-        const { id_membro } = request.params;
+        const { id_membro, id_igreja } = request.params;
         
-        const { cod_membro, nome, numero, birth, novo_convertido, depart } = request.body;
+        const { cod_membro, nome, numero, birth, novo_convertido, nome_departamento } = request.body;
 
-        await db.updateMembro(id_membro, cod_membro, nome, numero, birth, novo_convertido, depart);
+        await db.updateMembro(id_membro, cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_igreja);
 
         response.status(200).send({ message: "Membro atualizado com sucesso." });
     } catch (error) {
@@ -63,7 +66,34 @@ routes.get('/:id_membro', async (request, response) => {
     } catch (error){
         response.status(500).send(`Erro na requisição! ${error}`);
     }
-})
+});
+
+routes.get('/igreja', async (request, response) => {
+    try {
+        const igrejas = await db.getIgrejas();
+        response.status(200).send(igrejas);
+        console.log(igrejas)
+    } catch (error) {
+        response.status(500).send(`Erro na requisição! ${error}`);
+        console.log(error)
+    }
+});
+
+routes.get('/membro/:id_igreja', async (request, response) => {
+    try{
+        const { id_igreja } = request.params;
+
+        const membro = await db.selectMembro(id_igreja);
+ 
+        if (membro) {
+            response.status(201).send(membro);
+        } else {
+            response.status(404).send("Membro não encontrado!");
+        }
+    } catch (error){
+        response.status(500).send(`Erro na requisição! ${error}`);
+    }
+});
 
 routes.get('/', async (request, response) => {
     try{
@@ -79,6 +109,6 @@ routes.get('/', async (request, response) => {
     } catch (error){
         response.status(500).send(`Erro na requisição! ${error}`);
     }
-})
+});
 
 export default routes;

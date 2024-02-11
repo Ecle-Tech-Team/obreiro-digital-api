@@ -1,10 +1,10 @@
 import banco from '../repository/connection.js';
 
-async function createMembro(cod_membro, nome, numero, birth, novo_convertido, depart) {
+async function createMembro(cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_igreja) {
 
-    const sql = "INSERT INTO membro(cod_membro, nome, numero, birth, novo_convertido, id_departamento) VALUES(?, ?, ?, ?, ?, ?)";    
+    const sql = "INSERT INTO membro(cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja) VALUES(?, ?, ?, ?, ?, ?, ?)";    
 
-    const values = [cod_membro, nome, numero, birth, novo_convertido, depart]; 
+    const values = [cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_igreja]; 
 
     const conn = await banco.connect();
     conn.query(sql, values);
@@ -21,13 +21,13 @@ async function selectDepartamentos() {
     return rows;
 }
 
-async function countMembros() {
-    const sql = "SELECT COUNT(*) as total FROM membro";
+async function countMembros(id_igreja) {
+    const sql = "SELECT COUNT(*) as total FROM membro WHERE id_igreja = ?";
 
     const conn = await banco.connect();
     
     try {
-        const [rows] = await conn.query(sql);
+        const [rows] = await conn.query(sql, [id_igreja]);
         return rows[0].total;
     } catch (error) {
         throw error;
@@ -36,22 +36,35 @@ async function countMembros() {
     }
 }
 
-async function updateMembro(id_membro, cod_membro, nome, numero, birth, novo_convertido, depart) {
-    const sql = "UPDATE membro SET cod_membro = ?, nome = ?, numero = ?, birth = ?, novo_convertido = ?, id_departamento = ? WHERE id_membro = ?";
-    
-    const values = [cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_membro];
+async function updateMembro(id_membro, cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_igreja) {
+    const sql = "UPDATE membro SET cod_membro = ?, nome = ?, numero = ?, birth = ?, novo_convertido = ?, id_departamento = ?, id_igreja = ? WHERE id_membro = ?";    
+    const values = [cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_igreja, id_membro];
 
     const conn = await banco.connect();
     await conn.query(sql, values);
     conn.end();      
 }
 
-
-async function selectMembro(){
-    const sql = "SELECT m.*, d.nome AS nome_departamento FROM membro m LEFT JOIN departamentos d ON m.id_departamento = d.id_departamento";
+async function selectMembro(id_igreja){
+    const sql = "SELECT * FROM membro WHERE id_igreja = ?";
 
     const conn = await banco.connect();
     
+    try {
+        const [rows] = await conn.query(sql, [id_igreja]);
+        return rows;
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
+
+async function getIgrejas() {
+    const sql = "SELECT * FROM igreja";
+
+    const conn = await banco.connect();
+
     try {
         const [rows] = await conn.query(sql);
         return rows;
@@ -82,4 +95,4 @@ async function selectMembroOnly(id_membro) {
     }
 }
 
-export default {createMembro, countMembros, updateMembro, selectMembro, selectMembroOnly, selectDepartamentos};
+export default {createMembro, countMembros, updateMembro, selectMembro, selectMembroOnly, getIgrejas, selectDepartamentos};

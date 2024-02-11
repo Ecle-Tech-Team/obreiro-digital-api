@@ -1,6 +1,7 @@
 import express from 'express';
 import login from './controllers/loginController.js';
 import cadastro from './controllers/cadastroController.js';
+import igreja from './controllers/igrejaController.js';
 import financas from './controllers/financasController.js'
 import membro from './controllers/membrosController.js';
 import departamento from './controllers/departamentosController.js';
@@ -15,6 +16,7 @@ const route = express();
 
 route.use ('/login', login);
 route.use ('/cadastro', cadastro);
+route.use ('/igreja', igreja);
 route.use ('/financas', financas)
 route.use ('/membro', membro);
 route.use ('/departamento', departamento);

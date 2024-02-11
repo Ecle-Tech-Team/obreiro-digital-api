@@ -1,31 +1,45 @@
 import banco from '../repository/connection.js';
 
-async function createDepartamentos(nome, birth, data_congresso) {
-
-    const sql = "INSERT INTO departamentos(nome, birth, data_congresso) VALUES(?, ?, ?)";
+async function createDepartamentos(nome, birth, data_congresso, id_igreja) {
+    const sql = "INSERT INTO departamentos(nome, birth, data_congresso, id_igreja) VALUES(?, ?, ?, ?)";
     
-    const values = [nome, birth, data_congresso];
+    const values = [nome, birth, data_congresso, id_igreja];
 
     const conn = await banco.connect();
     conn.query(sql, values);
-    conn.end();      
-}
+    conn.end();
+}  
 
-async function updateDepartamento(id_departamento, nome, birth, data_congresso) {
-    const sql = "UPDATE departamentos SET nome = ?, birth = ?, data_congresso = ? WHERE id_departamento = ?";
+async function updateDepartamento(id_departamento, nome, birth, data_congresso, id_igreja) {
+    const sql = "UPDATE departamentos SET nome = ?, birth = ?, data_congresso = ?, id_igreja = ? WHERE id_departamento = ?";
     
-    const values = [nome, birth, data_congresso, id_departamento];
+    const values = [nome, birth, data_congresso, id_igreja, id_departamento];
 
     const conn = await banco.connect();
     await conn.query(sql, values);
     conn.end();      
 }
 
-async function selectDepartamento() {
-    const sql = "SELECT * FROM departamentos";
+async function selectDepartamento(id_igreja) {
+    const sql = "SELECT * FROM departamentos WHERE id_igreja = ?";
 
     const conn = await banco.connect();
     
+    try {
+        const [rows] = await conn.query(sql, [id_igreja]);
+        return rows;
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
+
+async function getIgrejas() {
+    const sql = "SELECT * FROM igreja";
+
+    const conn = await banco.connect();
+
     try {
         const [rows] = await conn.query(sql);
         return rows;
@@ -56,4 +70,4 @@ async function selectDepartamentoOnly(id_departamento) {
     }
 }
 
-export default {createDepartamentos, updateDepartamento, selectDepartamento, selectDepartamentoOnly};
+export default {createDepartamentos, updateDepartamento, selectDepartamento, getIgrejas, selectDepartamentoOnly};

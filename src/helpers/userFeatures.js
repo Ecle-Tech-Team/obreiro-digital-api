@@ -1,12 +1,19 @@
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 
-function generateToken(id_login, email){
-  const secret = crypto.randomBytes(32).toString('hex');
+const secret = '1501222724';
 
-  console.log (secret);
-
-  return jwt.sign({infoUser: {id_login, email}}, secret, {expiresIn: 60 /*segundos*/ * 60 /*minutos*/ * 5 /*horas*/});
+function generateToken(id_login, email, id_igreja){ 
+  return jwt.sign({ infoUser: { id_login, email, id_igreja } }, secret, {expiresIn: 60 * 60 * 5});
 }
 
-export {generateToken};
+function getIdIgrejaFromToken(token) {
+  try {
+    const decoded = jwt.verify(token, secret);
+    return decoded.infoUser.id_igreja;
+  } catch (error) {
+    
+    return null;
+  }
+}
+
+export {generateToken, getIdIgrejaFromToken};
