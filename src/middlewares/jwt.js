@@ -4,7 +4,6 @@ function verifyJWT(request, response, next){
   const secret = '1501222724';
 
   const authHeader = request.headers.authorization;
-  console.log('Auth Header:', authHeader);
   if(!authHeader) return response.status(401).send({message: 'Token não informado!'});
 
   const parts = authHeader.split(' ');

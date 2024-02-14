@@ -36,28 +36,14 @@ async function selectUserOnly(id_user) {
     }
 }
 
-async function getIgrejas() {
-    const sql = "SELECT * FROM igreja";
-
-    const conn = await banco.connect();
-
-    try {
-        const [rows] = await conn.query(sql);
-        return rows;
-    } catch (error) {
-        throw error;
-    } finally {
-        conn.end();
-    }
-}
-async function selectUser(id_igreja) {
+async function selectUserIdIgreja(id_igreja) {
     let sql = 'SELECT * FROM user WHERE id_igreja = ?';
   
     const conn = await banco.connect();
 
     try {
         const [rows] = await conn.query(sql, [id_igreja]);
-        return rows;
+        return rows[0];
     } catch (error) {
         throw error;
     } finally {
@@ -65,4 +51,19 @@ async function selectUser(id_igreja) {
     }
 }
 
-export default {createUser, getIgrejas, selectUser, updateUser, selectUserOnly};
+async function selectUser() {
+    let sql = 'SELECT * FROM user';
+  
+    const conn = await banco.connect();
+
+    try {
+        const [rows] = await conn.query(sql);
+        return rows[0];
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
+
+export default {createUser, selectUserIdIgreja, selectUser, updateUser, selectUserOnly};

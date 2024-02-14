@@ -5,9 +5,9 @@ const routes = express.Router();
 
 routes.post('/', async (request, response) => {
     try{
-        const{cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_igreja}=request.body;
+        const{cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja}=request.body;
 
-        await db.createMembro(cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_igreja);
+        await db.createMembro(cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja);
 
         response.status(201).send({message: "Cadastro realizado com sucesso."})
               
@@ -32,9 +32,9 @@ routes.put('/:id_membro/:id_igreja', async (request, response) => {
     try {
         const { id_membro, id_igreja } = request.params;
         
-        const { cod_membro, nome, numero, birth, novo_convertido, nome_departamento } = request.body;
+        const { cod_membro, nome, numero, birth, novo_convertido, id_departamento } = request.body;
 
-        await db.updateMembro(id_membro, cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_igreja);
+        await db.updateMembro(id_membro, cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja);
 
         response.status(200).send({ message: "Membro atualizado com sucesso." });
     } catch (error) {
@@ -68,29 +68,27 @@ routes.get('/:id_membro', async (request, response) => {
     }
 });
 
-routes.get('/igreja', async (request, response) => {
+routes.get('/membro/igreja', async (request, response) => {
     try {
         const igrejas = await db.getIgrejas();
-        response.status(200).send(igrejas);
-        console.log(igrejas)
+        response.status(200).send(igrejas);        
     } catch (error) {
         response.status(500).send(`Erro na requisição! ${error}`);
         console.log(error)
     }
 });
 
-routes.get('/membro/:id_igreja', async (request, response) => {
-    try{
+routes.get('/igreja/:id_igreja', async (request, response) => {
+    try {
         const { id_igreja } = request.params;
+        const membros = await db.selectMembro(id_igreja);
 
-        const membro = await db.selectMembro(id_igreja);
- 
-        if (membro) {
-            response.status(201).send(membro);
+        if (membros.length > 0) {
+            response.status(200).send(membros);
         } else {
-            response.status(404).send("Membro não encontrado!");
+            response.status(404).send("Nenhum membro encontrado!");
         }
-    } catch (error){
+    } catch (error) {
         response.status(500).send(`Erro na requisição! ${error}`);
     }
 });

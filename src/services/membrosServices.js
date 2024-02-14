@@ -1,10 +1,10 @@
 import banco from '../repository/connection.js';
 
-async function createMembro(cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_igreja) {
+async function createMembro(cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja) {
 
     const sql = "INSERT INTO membro(cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja) VALUES(?, ?, ?, ?, ?, ?, ?)";    
 
-    const values = [cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_igreja]; 
+    const values = [cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja]; 
 
     const conn = await banco.connect();
     conn.query(sql, values);
@@ -36,9 +36,9 @@ async function countMembros(id_igreja) {
     }
 }
 
-async function updateMembro(id_membro, cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_igreja) {
+async function updateMembro(id_membro, cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja) {
     const sql = "UPDATE membro SET cod_membro = ?, nome = ?, numero = ?, birth = ?, novo_convertido = ?, id_departamento = ?, id_igreja = ? WHERE id_membro = ?";    
-    const values = [cod_membro, nome, numero, birth, novo_convertido, nome_departamento, id_igreja, id_membro];
+    const values = [cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja, id_membro];
 
     const conn = await banco.connect();
     await conn.query(sql, values);
