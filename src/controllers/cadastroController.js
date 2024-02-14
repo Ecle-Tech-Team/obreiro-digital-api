@@ -16,11 +16,11 @@ routes.post('/', async (request, response) => {
     }
 });
 
-routes.put('/:id_user', async (request, response) => {
+routes.put('/:id_user/:id_igreja', async (request, response) => {
     try {
-        const { id_user } = request.params;
+        const { id_user, id_igreja } = request.params;
         
-        const { cod_membro, nome, email, senha, birth, cargo, id_igreja } = request.body;
+        const { cod_membro, nome, email, senha, birth, cargo } = request.body;
 
         await db.updateUser(id_user, cod_membro, nome, email, senha, birth, cargo, id_igreja);
 
@@ -30,14 +30,23 @@ routes.put('/:id_user', async (request, response) => {
     }
 });
 
-routes.get('/cadastro', async (request, response) => {
-    console.log('Rota de cadastro acessada');
+routes.get('/:id_igreja', async (request, response) => {
+    
     try{
         const { id_igreja } = request.params;
 
-        const users = await db.selectUserIdIgreja(id_igreja);
+        const users = await db.selectUser(id_igreja);
 
         response.status(200).send(users);
+    } catch (error) {
+        response.status(500).send(`Erro na requisição! ${error}`);
+    }
+});
+
+routes.get('/igreja', async (request, response) => {
+    try {
+        const igrejas = await db.getIgrejas();
+        response.status(200).send(igrejas);
     } catch (error) {
         response.status(500).send(`Erro na requisição! ${error}`);
     }

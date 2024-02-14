@@ -11,12 +11,14 @@ import pedido from './controllers/pedidoController.js';
 import evento from './controllers/eventoController.js';
 import perfil from './controllers/perfilController.js';
 import recSenha from './controllers/passwordController.js';
+import consultCep from './helpers/cep.js';
 
 const route = express();
 
 route.use ('/login', login);
 route.use ('/cadastro', cadastro);
 route.use ('/igreja', igreja);
+route.use('/cep', consultCep);
 route.use ('/financas', financas)
 route.use ('/membro', membro);
 route.use ('/departamento', departamento);
