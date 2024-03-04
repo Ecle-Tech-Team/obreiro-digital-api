@@ -59,16 +59,25 @@ routes.get('/', async (request, response) => {
     }
 });
 
-routes.get('/:id_user', async (request, response) => {
+routes.get('/obreiros/:id_igreja', async (request, response) => {
     try {
-        const { id_user } = request.params;
-        const user = await db.selectUser(id_user);
+        const { id_igreja } = request.params;
+        const consult = await db.selectUserIdIgreja(id_igreja);
 
-        if (user) {
-            response.status(200).send(user);
+        if (consult.length > 0) {
+            response.status(200).send(consult)
         } else {
-            response.status(404).send("Usuário não encontrado!");
+            response.status(201).send(consult);
         }
+    } catch (error) {
+        response.status(500).send(`Erro na requisição! ${error}`);
+    }
+})
+
+routes.get('/cadastro/igreja', async (request, response) => {
+    try {
+        const igrejas = await db.getIgrejas();
+        response.status(200).send(igrejas);
     } catch (error) {
         response.status(500).send(`Erro na requisição! ${error}`);
     }

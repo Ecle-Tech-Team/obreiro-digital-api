@@ -40,15 +40,10 @@ async function selectUserIdIgreja(id_igreja) {
     let sql = 'SELECT * FROM user WHERE id_igreja = ?';
   
     const conn = await banco.connect();
+    const [row] = await conn.query(sql, id_igreja);
+    conn.end();
 
-    try {
-        const [rows] = await conn.query(sql, [id_igreja]);
-        return rows[0];
-    } catch (error) {
-        throw error;
-    } finally {
-        conn.end();
-    }
+    return row;
 }
 
 async function selectUser() {
@@ -66,4 +61,19 @@ async function selectUser() {
     }
 }
 
-export default {createUser, selectUserIdIgreja, selectUser, updateUser, selectUserOnly};
+async function getIgrejas() {
+    const sql = "SELECT * FROM igreja";
+
+    const conn = await banco.connect();
+
+    try {
+        const [rows] = await conn.query(sql);
+        return rows;
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
+
+export default {createUser, selectUserIdIgreja, selectUser, updateUser, selectUserOnly, getIgrejas};
