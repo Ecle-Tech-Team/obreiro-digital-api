@@ -5,9 +5,9 @@ const routes = express.Router();
 
 routes.post('/', async (request, response) => {
     try {
-        const { nome_produto, categoria_produto,quantidade, data_pedido } = request.body;
+        const { nome_produto, categoria_produto,quantidade, data_pedido, id_igreja } = request.body;
 
-        await db.createPedido(nome_produto, categoria_produto, quantidade, data_pedido);
+        await db.createPedido(nome_produto, categoria_produto, quantidade, data_pedido, id_igreja);
 
         response.status(201).send({ message: "Pedido realizado com sucesso." });
     } catch (error) {
@@ -15,9 +15,20 @@ routes.post('/', async (request, response) => {
     }
 });
 
-routes.get('/', async (request, response) => {
+routes.get('/igreja', async (request, response) => {
     try {
-        const pedidos = await db.selectPedidos();
+        const igrejas = await db.getIgrejas();
+        response.status(200).send(igrejas);
+    } catch (error) {
+        response.status(500).send(`Erro na requisição! ${error}`);
+    }
+});
+
+routes.get('/:id_igreja', async (request, response) => {
+    try {
+        const { id_igreja } = request.params;
+        
+        const pedidos = await db.selectPedidos(id_igreja);
 
         response.status(200).send(pedidos);
     } catch (error) {
@@ -25,12 +36,12 @@ routes.get('/', async (request, response) => {
     }
 });
 
-routes.put('/:id_pedido', async (request, response) => {
+routes.put('/:id_pedido/:id_igreja', async (request, response) => {
     try {
-        const { id_pedido } = request.params;
+        const { id_pedido, id_igreja } = request.params;
         const { nome_produto, categoria_produto, quantidade, data_pedido, status_pedido } = request.body;
 
-        await db.updatePedidos(id_pedido, nome_produto, categoria_produto, quantidade, data_pedido, status_pedido);
+        await db.updatePedidos(id_pedido, nome_produto, categoria_produto, quantidade, data_pedido, status_pedido, id_igreja);
 
         response.status(200).send({ message: "Pedido atualizado com sucesso." });
     } catch (error) {
@@ -51,9 +62,12 @@ routes.put('/:id_pedido/responder', async (request, response) => {
     }
 });
 
-routes.get('/count/entregue', async (request, response) => {
+routes.get('/count/entregue/:id_igreja', async (request, response) => {
     try {
-        const totalPedidosEntregues = await db.countPedidosEntregues();
+        const { id_igreja } = request.params;
+
+        const totalPedidosEntregues = await db.countPedidosEntregues(id_igreja);
+
         response.status(200).json(totalPedidosEntregues);
     } catch (error) {
         console.error('Erro ao contar pedidos entregues:', error);
@@ -61,9 +75,12 @@ routes.get('/count/entregue', async (request, response) => {
     }
 });
 
-routes.get('/count/em-andamento', async (request, response) => {
+routes.get('/count/em-andamento/:id_igreja', async (request, response) => {
     try {
-        const totalPedidosEmAndamento = await db.countPedidosEmAndamento();
+        const { id_igreja } = request.params;
+
+        const totalPedidosEmAndamento = await db.countPedidosEmAndamento(id_igreja);
+
         response.status(200).json(totalPedidosEmAndamento);
     } catch (error) {
         console.error('Erro ao contar pedidos em andamento:', error);
@@ -71,9 +88,12 @@ routes.get('/count/em-andamento', async (request, response) => {
     }
 });
 
-routes.get('/count/recusados', async (request, response) => {
+routes.get('/count/recusados/:id_igreja', async (request, response) => {
     try {
-        const totalPedidosRecusados = await db.countPedidosRecusados();
+        const { id_igreja } = request.params;
+
+        const totalPedidosRecusados = await db.countPedidosRecusados(id_igreja);
+
         response.status(200).json(totalPedidosRecusados);
     } catch (error) {
         console.error('Erro ao contar pedidos recusados:', error);
@@ -81,9 +101,12 @@ routes.get('/count/recusados', async (request, response) => {
     }
 });
 
-routes.get('/count/total', async (request, response) => {
+routes.get('/count/total/:id_igreja', async (request, response) => {
     try {
-        const totalPedidos = await db.countPedidosTotais();
+        const { id_igreja } = request.params;
+
+        const totalPedidos = await db.countPedidosTotais(id_igreja);
+
         response.status(200).json(totalPedidos);
     } catch (error) {
         console.error('Erro ao contar pedidos totais:', error);
