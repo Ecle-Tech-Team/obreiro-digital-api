@@ -5,16 +5,24 @@ const routes = express.Router();
 
 routes.post('/', async (request, response) => {
     try{
-        const{nome, cristao, data_visita, congregacao, ministerio, convidado_por}=request.body;
+        const{nome, cristao, data_visita, congregacao, ministerio, convidado_por, id_igreja}=request.body;
 
-        console.log('Valores recebidos:', request.body);
-
-        await db.createVisitante(nome, cristao, data_visita, congregacao, ministerio, convidado_por);
+        await db.createVisitante(nome, cristao, data_visita, congregacao, ministerio, convidado_por, id_igreja);
 
         response.status(201).send({message: "Cadastro realizado com sucesso."})
               
     } catch (error) {
         response.status(500).send(`Erro na requisição! ${error}`);
+    }
+});
+
+routes.get('/igreja', async (request, response) => {
+    try {
+        const igrejas = await db.getIgrejas();
+        response.status(200).send(igrejas);        
+    } catch (error) {
+        response.status(500).send(`Erro na requisição! ${error}`);
+        console.log(error)
     }
 });
 
@@ -28,11 +36,11 @@ routes.get('/membros', async (request, response) => {
     }
 });
 
-routes.get('/', async (request, response) => {
+routes.get('/:id_igreja', async (request, response) => {
     try{
-        const { id_visitante } = request.params;
+        const { id_igreja } = request.params;
 
-        const visitante = await db.selectVisitantes(id_visitante);
+        const visitante = await db.selectVisitantes(id_igreja);
  
         if (visitante) {
             response.status(200).send(visitante);

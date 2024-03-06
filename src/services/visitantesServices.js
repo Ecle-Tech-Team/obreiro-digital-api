@@ -1,16 +1,29 @@
 import banco from '../repository/connection.js';
 
-async function createVisitante(nome, cristao, data_visita, congregacao, ministerio, convidado_por) {
-  console.log('Valor de id_membro recebido:', convidado_por);
-
-  const sql = "INSERT INTO visitante(nome, cristao, data_visita, congregacao, ministerio, id_membro) VALUES(?, ?, ?, ?, ?, ?)";
+async function createVisitante(nome, cristao, data_visita, congregacao, ministerio, convidado_por, id_igreja) {
+  const sql = "INSERT INTO visitante(nome, cristao, data_visita, congregacao, ministerio, id_membro, id_igreja) VALUES(?, ?, ?, ?, ?, ?, ?)";
   
-  const values = [nome, cristao, data_visita, congregacao, ministerio, convidado_por];
+  const values = [nome, cristao, data_visita, congregacao, ministerio, convidado_por, id_igreja];
 
   const conn = await banco.connect();
   await conn.query(sql, values);
   conn.end();      
 };
+
+async function getIgrejas() {
+  const sql = "SELECT * FROM igreja";
+
+  const conn = await banco.connect();
+
+  try {
+      const [rows] = await conn.query(sql);
+      return rows;
+  } catch (error) {
+      throw error;
+  } finally {
+      conn.end();
+  }
+}
 
 async function selectMembros() {
   const sql = "SELECT * FROM membro"
@@ -22,13 +35,13 @@ async function selectMembros() {
   return rows;
 };
 
-async function selectVisitantes(){
-  const sql = "SELECT v.*, m.nome AS nome_membro FROM visitante v LEFT JOIN membro m ON v.id_membro = m.id_membro"
+async function selectVisitantes(id_igreja){
+  const sql = "SELECT * FROM visitante WHERE id_igreja = ?"
 
   const conn = await banco.connect();
   
   try {
-    const [rows] = await conn.query(sql);
+    const [rows] = await conn.query(sql, [id_igreja]);
     return rows;
   } catch (error) {
     throw error;
@@ -52,4 +65,4 @@ async function countVisitantes() {
   }
 };
 
-export default { createVisitante, selectMembros, selectVisitantes, countVisitantes }
+export default { createVisitante, getIgrejas, selectMembros, selectVisitantes, countVisitantes }
