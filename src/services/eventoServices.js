@@ -1,29 +1,44 @@
 import banco from '../repository/connection.js';
 
-async function createEvento(nome, data_inicio, horario_inicio, data_fim, horario_fim, local) {
-    const sql = "INSERT INTO eventos (nome, data_inicio, horario_inicio, data_fim, horario_fim, local) VALUES (?, ?, ?, ?, ?, ?)";
+async function createEvento(nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_igreja) {
+    const sql = "INSERT INTO eventos (nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_igreja) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-    const values = [nome, data_inicio, horario_inicio, data_fim, horario_fim, local];
+    const values = [nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_igreja];
 
     const conn = await banco.connect();
     await conn.query(sql, values);
     conn.end();
 }
 
-async function selectEventos() {
-    const sql = "SELECT * FROM eventos";
+async function getIgrejas() {
+    const sql = "SELECT * FROM igreja";
 
     const conn = await banco.connect();
-    const [rows] = await conn.query(sql);
+
+    try {
+        const [rows] = await conn.query(sql);
+        return rows;
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
+
+async function selectEventos(id_igreja) {
+    const sql = "SELECT * FROM eventos WHERE id_igreja = ?";
+
+    const conn = await banco.connect();
+    const [rows] = await conn.query(sql, [id_igreja]);
     conn.end();
 
     return rows;
 }
 
-async function updateEvento(id_evento, nome, data_inicio, horario_inicio, data_fim, horario_fim, local) {
-    const sql = "UPDATE eventos SET nome = ?, data_inicio = ?, horario_inicio = ?, data_fim = ?, horario_fim = ?, local = ? WHERE id_evento = ?";
+async function updateEvento(id_evento, nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_igreja) {
+    const sql = "UPDATE eventos SET nome = ?, data_inicio = ?, horario_inicio = ?, data_fim = ?, horario_fim = ?, local = ?, id_igreja = ? WHERE id_evento = ?";
 
-    const values = [nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_evento];
+    const values = [nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_igreja, id_evento];
 
     const conn = await banco.connect();
     await conn.query(sql, values);
@@ -45,4 +60,4 @@ async function countEventos() {
     }
 }
 
-export default { createEvento, selectEventos, updateEvento, countEventos };
+export default { createEvento, getIgrejas, selectEventos, updateEvento, countEventos };
