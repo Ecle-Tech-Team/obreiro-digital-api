@@ -5,9 +5,9 @@ const routes = express.Router();
 
 routes.post('/', async (request, response) => {
     try {
-        const { cod_produto, categoria, nome_produto, quantidade, validade, preco_unitario } = request.body;
+        const { cod_produto, categoria, nome_produto, quantidade, validade, preco_unitario, id_igreja } = request.body;
 
-        await db.createProduto(cod_produto, categoria, nome_produto, quantidade, validade, preco_unitario);
+        await db.createProduto(cod_produto, categoria, nome_produto, quantidade, validade, preco_unitario, id_igreja);
 
         response.status(201).send({ message: "Produto adicionado ao estoque com sucesso." });
     } catch (error) {
@@ -15,13 +15,13 @@ routes.post('/', async (request, response) => {
     }
 });
 
-routes.put('/:id_produto', async (request, response) => {
+routes.put('/:id_produto/:id_igreja', async (request, response) => {
     try {
-        const { id_produto } = request.params;
+        const { id_produto, id_igreja } = request.params;
         
         const { cod_produto, categoria, nome_produto, quantidade, validade, preco_unitario } = request.body;
 
-        await db.updateEstoque(id_produto, cod_produto, categoria, nome_produto, quantidade, validade, preco_unitario);
+        await db.updateEstoque(id_produto, cod_produto, categoria, nome_produto, quantidade, validade, preco_unitario, id_igreja);
 
         response.status(200).send({ message: "Produto atualizado com sucesso." });
     } catch (error) {
@@ -29,9 +29,21 @@ routes.put('/:id_produto', async (request, response) => {
     }
 });
 
-routes.get('/', async (request, response) => {
+routes.get('/igreja', async (request, response) => {
     try {
-        const estoque = await db.selectEstoque();
+        const igrejas = await db.getIgrejas();
+        response.status(200).send(igrejas);
+    } catch (error) {
+        response.status(500).send(`Erro na requisição! ${error}`);
+    }
+});
+
+routes.get('/:id_igreja', async (request, response) => {
+    try {
+        const { id_igreja } = request.params;
+
+        const estoque = await db.selectEstoque(id_igreja);
+        
         response.status(200).send(estoque);
     } catch (error) {
         response.status(500).send(`Erro na requisição! ${error}`);
