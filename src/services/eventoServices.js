@@ -45,13 +45,13 @@ async function updateEvento(id_evento, nome, data_inicio, horario_inicio, data_f
     conn.end();
 }
 
-async function countEventos() {
-    const sql = "SELECT COUNT(*) as total FROM eventos";
+async function countEventos(id_igreja) {
+    const sql = "SELECT COUNT(*) as total FROM eventos WHERE id_igreja = ?";
 
     const conn = await banco.connect();
     
     try {
-        const [rows] = await conn.query(sql);
+        const [rows] = await conn.query(sql, [id_igreja]);
         return rows[0].total;
     } catch (error) {
         throw error;

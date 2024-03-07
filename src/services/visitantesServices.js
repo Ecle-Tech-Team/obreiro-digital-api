@@ -50,13 +50,13 @@ async function selectVisitantes(id_igreja){
   }
 };
 
-async function countVisitantes() {
-  const sql = "SELECT COUNT(*) as total FROM visitante";
+async function countVisitantes(id_igreja) {
+  const sql = "SELECT COUNT(*) as total FROM visitante WHERE id_igreja = ?";
 
   const conn = await banco.connect();
   
   try {
-    const [rows] = await conn.query(sql);
+    const [rows] = await conn.query(sql, [id_igreja]);
     return rows[0].total;
   } catch (error) {
       throw error;

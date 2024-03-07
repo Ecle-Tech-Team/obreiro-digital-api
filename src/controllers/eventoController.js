@@ -53,9 +53,12 @@ routes.put('/:id_evento/:id_igreja', async (request, response) => {
     }
 });
 
-routes.get('/count', async (request, response) => {
+routes.get('/count/:id_igreja', async (request, response) => {
     try {
-        const totalEventos = await db.countEventos();
+        const { id_igreja } = request.params;
+
+        const totalEventos = await db.countEventos(id_igreja);
+
         response.status(200).json(totalEventos);
     } catch (error) {
         response.status(500).json(`Erro na requisição! ${error}`);

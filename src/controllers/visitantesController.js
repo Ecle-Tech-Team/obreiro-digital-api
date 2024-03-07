@@ -52,9 +52,12 @@ routes.get('/:id_igreja', async (request, response) => {
     }
 });
 
-routes.get('/count', async (request, response) => {
+routes.get('/count/:id_igreja', async (request, response) => {
     try {
-        const totalVisitantes = await db.countVisitantes();
+        const { id_igreja } = request.params;
+
+        const totalVisitantes = await db.countVisitantes(id_igreja);
+        
         response.status(200).json(totalVisitantes);
     } catch (error) {
         response.status(500).json(`Erro na requisição! ${error}`);
