@@ -5,9 +5,9 @@ const routes = express.Router();
 
 routes.post('/', async (request, response) => {
     try {
-        const { tipo, categoria, valor, descricao, data } = request.body;
+        const { tipo, categoria, valor, descricao, data, id_igreja } = request.body;
 
-        const financasId = await db.createFinancas(tipo, categoria, valor, descricao, data);
+        const financasId = await db.createFinancas(tipo, categoria, valor, descricao, data, id_igreja);
 
         response.status(201).send({
             message: 'Movimentação financeira registrada com sucesso.',
@@ -18,31 +18,37 @@ routes.post('/', async (request, response) => {
     }
 });
 
-routes.get('/financas', async (request, response) => {
+routes.get('/:id_igreja', async (request, response) => {
     try {
-        const financas = await db.getFinancas();
+        const { id_igreja } = request.params;
+
+        const financas = await db.getFinancas(id_igreja);
+
         response.status(200).send(financas);
     } catch (error) {
         response.status(500).send(`Erro na requisição! ${error.message}`);
     }
   });
   
-routes.get('/saldo', async (request, response) => {
+routes.get('/saldo/:id_igreja', async (request, response) => {
     try {
-        const saldo = await db.getSaldo();
+        const { id_igreja } = request.params;
+
+        const saldo = await db.getSaldo(id_igreja);
+
         response.status(200).send({ saldo });
     } catch (error) {
         response.status(500).send(`Erro na requisição! ${error.message}`);
     }
 });
 
-routes.put('/:id_financas', async (request, response) => {
+routes.put('/:id_financas/:id_igreja', async (request, response) => {
     try {
-        const { id_financas } = request.params;
+        const { id_financas, id_igreja } = request.params;
         
         const { tipo, categoria, valor, descricao, data } = request.body;
 
-        await db.updateFinancas(tipo, categoria, valor, descricao, data, id_financas);
+        await db.updateFinancas(tipo, categoria, valor, descricao, data, id_igreja, id_financas);
 
         response.status(200).send({ message: "Movimentação atualizada com sucesso." });
     } catch (error) {
