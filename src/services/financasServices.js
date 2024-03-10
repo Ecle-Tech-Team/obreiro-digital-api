@@ -20,7 +20,7 @@ async function createFinancas(tipo, categoria, valor, descricao, data, id_igreja
 }
 
 async function updateSaldoEntrada(valor, id_igreja) {
-    const sql = 'UPDATE saldo SET saldo_atual = saldo_atual + ? WHERE id_saldo = 1 AND id_igreja = ?';
+    const sql = 'UPDATE saldo SET saldo_atual = saldo_atual + ? WHERE id_igreja = ?';
 
     const values = [valor, id_igreja];
 
@@ -30,7 +30,7 @@ async function updateSaldoEntrada(valor, id_igreja) {
 }
 
 async function updateSaldoSaida(valor, id_igreja) {
-    const sql = 'UPDATE saldo SET saldo_atual = saldo_atual - ? WHERE id_saldo = 1 AND id_igreja = ?';
+    const sql = 'UPDATE saldo SET saldo_atual = saldo_atual - ? WHERE id_igreja = ?';
 
     const values = [valor, id_igreja];
 

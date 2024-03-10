@@ -143,9 +143,22 @@ ADD CONSTRAINT fk_visitantes_igrejas FOREIGN KEY (id_igreja) REFERENCES igreja(i
 ALTER TABLE saldo
 ADD COLUMN id_igreja INT,
 ADD CONSTRAINT fk_saldo_igrejas FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja);
+    
+DELIMITER //
+
+CREATE TRIGGER AfterIgrejaInsert
+AFTER INSERT ON igreja
+FOR EACH ROW
+BEGIN
+    INSERT INTO saldo (saldo_atual, data_atualizacao, id_igreja)
+    VALUES (0, CURDATE(), NEW.id_igreja);
+END //
+
+DELIMITER ;
+
 
 INSERT INTO igreja (nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade)
-VALUES ('Igreja Exemplo', '12345678901234', '2022-01-01', 'Setor Exemplo', 'Ministério Exemplo', '12345010', 'Rua Exemplo, 123', 'Bairro Exemplo', 'Cidade Exemplo');
+	VALUES ('Assembléia de Deus Jardim São Marcos', '12345678901234', '2022-01-01', '47', 'Ministério do Belém', '06814165', 'Rua Augusto de Almeida Batista', 'Jardim São Marcos', 'Embu das Artes');
 
 INSERT INTO user (cod_membro, nome, email, senha, birth, cargo, id_igreja) 
 	VALUES ('1', 'Adilson', 'pastor@gmail.com', '123', '2004-10-23', 'Pastor', 1);
@@ -153,11 +166,8 @@ INSERT INTO user (cod_membro, nome, email, senha, birth, cargo, id_igreja)
 INSERT INTO user (cod_membro, nome, email, senha, birth, cargo, id_igreja) 
 	VALUES ('2', 'Samuel', 'obreiro@gmail.com', '123', '2004-10-23', 'Obreiro', 1);
     
-INSERT INTO departamentos(nome, birth, data_congresso)
-	VALUES ('Missões', '1978-11-03', '2024-10-10'); 
-    
-INSERT INTO saldo (saldo_atual, data_atualizacao) VALUES (0, CURDATE());
+INSERT INTO departamentos(nome, birth, data_congresso, id_igreja)
+	VALUES ('Missões', '1978-11-03', '2024-10-10', 1);
 
-select * from user;
-SELECT * FROM user WHERE id_igreja = 1;
-SELECT * FROM membro WHERE id_igreja = 1;
+SELECT * FROM saldo; 
+SELECT COUNT(*) as total_visitantes FROM visitante WHERE id_igreja = 1 AND WEEK(data_visita) = WEEK(NOW()) GROUP BY DATE(data_visita)
