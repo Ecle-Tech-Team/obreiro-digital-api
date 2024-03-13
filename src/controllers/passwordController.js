@@ -1,6 +1,6 @@
 import express from 'express';
 import db from '../services/checkServices.js'; // Importando o módulo de serviço do banco de dados
-import { generatePassword } from '../helpers/recoverPassword.js'; // Importando a função para gerar senhas
+import { generatePassword } from '../helpers/generatePassword.js'; // Importando a função para gerar senhas
 import nodemailer from 'nodemailer'; // Importando o módulo para enviar e-mails
 
 const routes = express.Router(); // Criando um roteador com Express

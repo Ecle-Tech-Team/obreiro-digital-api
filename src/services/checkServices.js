@@ -1,46 +1,36 @@
-import banco from '../repository/connection.js'
+import banco from '../repository/connection.js';
 
-async function checkEmail(email){
+async function checkEmail(email) {
 
-  const sql = 'SELECT email FROM employee WHERE email = ?';
+  const sql = "SELECT email FROM user WHERE email = ?";
 
   const conn = await banco.connect();
   const [rows] = await conn.query(sql, email);
-  conn.end();
+    conn.end();
   
   return rows;
 }
 
-async function checkCode(email, codigo){
-  const sql = "SELECT * FROM tbl_usuario WHERE email = ? and senha = ?";
-  const conn = await banco.connect();
-  const [rows] = await conn.query(sql, email, codigo);
+async function checkCode(email, codigo) {
+    const sql = "SELECT * FROM user WHERE email = ? and senha = ?";
 
-  conn.end();
-  return rows;
+    const conn = await banco.connect();
+    const [rows] = await conn.query(sql, email, codigo);
+    conn.end();
+
+    return rows;
 } 
 
-async function changePassword(email, newPassword){
+async function changePassword(email, newPassword) {
+    const sql = "UPDATE user SET senha = ? WHERE email = ?";
 
-  const sql = "UPDATE employee SET password_employee = ? WHERE email = ?";
-
-  const dataNewPass = [newPassword, email];
+    const values = [email, newPassword];
 
   const conn = await banco.connect();
-  await conn.query(sql, dataNewPass);
-  conn.end();
+  await conn.query(sql, values);
+    conn.end();
 
-  return;
+    return;
 }
-
-// export async function checkName(userName) {
-//   const sql = "SELECT * FROM tbl_usuario WHERE nome_usuario = ?";
-//   const dados = [name_user] 
-//   const conn = await banco.connect();
-//   const [rows] = await conn.query(sql, dados);
-  
-//   conn.end();
-//   return rows;
-// }
 
 export default {checkEmail, changePassword, checkCode}

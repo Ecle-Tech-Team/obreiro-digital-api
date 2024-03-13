@@ -12,6 +12,7 @@ import evento from './controllers/eventoController.js';
 import perfil from './controllers/perfilController.js';
 import recSenha from './controllers/passwordController.js';
 import consultCep from './helpers/cep.js';
+import recLogin from './controllers/recoverLogin.js';
 
 const route = express();
 
@@ -27,7 +28,7 @@ route.use ('/estoque', estoque);
 route.use ('/evento', evento);
 route.use ('/pedido', pedido);
 route.use ('/perfil', perfil);
-route.use ('/recuperarSenha', recSenha);
+route.use('/recuperarLogin', recLogin);
 
 //http://localhost:3333/(routes)
 
