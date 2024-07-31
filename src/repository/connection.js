@@ -2,11 +2,11 @@ import mysql2 from 'mysql2/promise';
 
 async function connect() {
     const connection = await mysql2.createConnection({
-        host: 'localhost',
-        port: 3306,
+        host: 'monorail.proxy.rlwy.net',
+        port: 32439,
         user: 'root',
-        password: '',
-        database: 'obreiro_digital',
+        password: 'CEecHPLpeYPRfKKTQXgQBJpYtbCyfwjS',
+        database: 'railway',
     });
 
     return connection;
