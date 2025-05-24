@@ -109,4 +109,17 @@ routes.get('/', async (request, response) => {
     }
 });
 
+routes.delete('/:id_membro', async (request, response) => {
+    try {
+        const { id_membro } = request.params;
+
+        await db.deleteMembro(id_membro);
+
+        response.status(200).send({ message: "Membro removido com sucesso." });
+
+    } catch (error) {        
+        response.status(500).send(`Erro ao deletar membro: ${error}`);
+    }
+});
+
 export default routes;

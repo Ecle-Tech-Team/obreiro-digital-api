@@ -95,4 +95,16 @@ async function selectMembroOnly(id_membro) {
     }
 }
 
-export default {createMembro, countMembros, updateMembro, selectMembro, selectMembroOnly, getIgrejas, selectDepartamentos};
+async function deleteMembro(id_membro) {
+    const sql = "DELETE FROM membro WHERE id_membro = ?";
+    const conn = await banco.connect();
+    try {
+        await conn.query(sql, [id_membro]);
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
+
+export default {createMembro, countMembros, updateMembro, selectMembro, selectMembroOnly, getIgrejas, selectDepartamentos, deleteMembro};
