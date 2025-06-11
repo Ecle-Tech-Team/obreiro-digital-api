@@ -81,6 +81,8 @@ routes.get('/membro/igreja', async (request, response) => {
 routes.get('/igreja/:id_igreja', async (request, response) => {
     try {
         const { id_igreja } = request.params;
+        const { search } = request.query; 
+        
         const membros = await db.selectMembro(id_igreja);
 
         if (membros.length > 0) {

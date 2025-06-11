@@ -45,13 +45,20 @@ async function updateMembro(id_membro, cod_membro, nome, numero, birth, novo_con
     conn.end();      
 }
 
-async function selectMembro(id_igreja){
-    const sql = "SELECT * FROM membro WHERE id_igreja = ?";
+async function selectMembro(id_igreja, searchTerm = '') {
+    let sql = "SELECT * FROM membro WHERE id_igreja = ?";
+    const params = [id_igreja];
+    
+    if (searchTerm) {
+        sql += " AND (nome LIKE ? OR cod_membro LIKE ? OR numero LIKE ?)";
+        const searchPattern = `%${searchTerm}%`;
+        params.push(searchPattern, searchPattern, searchPattern);
+    }
 
     const conn = await banco.connect();
     
     try {
-        const [rows] = await conn.query(sql, [id_igreja]);
+        const [rows] = await conn.query(sql, params);
         return rows;
     } catch (error) {
         throw error;
