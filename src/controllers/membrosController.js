@@ -1,18 +1,23 @@
 import express from 'express';
 import db from '../services/membrosServices.js';
+import verifyJWT from '../middlewares/jwt.js';
 
 const routes = express.Router();
 
+routes.use(verifyJWT);
+
 routes.post('/', async (request, response) => {
-    try{
-        const{cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja}=request.body;
-
+    try{       
+        const{cod_membro, nome, numero, birth, novo_convertido, id_departamento}=request.body;
+        
+        const id_igreja = request.user.id_igreja;
+        
         await db.createMembro(cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja);
-
-        response.status(201).send({message: "Cadastro realizado com sucesso."})
+        
+        response.status(201).json({ message: "Membro cadastrado com sucesso" });
               
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).json({ error: `Erro: ${error.message}` });
     }
 });
 
@@ -96,18 +101,18 @@ routes.get('/igreja/:id_igreja', async (request, response) => {
 });
 
 routes.get('/', async (request, response) => {
-    try{
-        const { id_membro } = request.params;
-
-        const membro = await db.selectMembro(id_membro);
- 
-        if (membro) {
-            response.status(200).send(membro);
-        } else {
-            response.status(404).send("Membro não encontrado!");
+    try {
+        
+        if (!request.user?.id_igreja) {
+            return response.status(403).json({ error: "ID da igreja não encontrado no token" });
         }
-    } catch (error){
-        response.status(500).send(`Erro na requisição! ${error}`);
+
+        const membros = await db.selectMembro(request.user.id_igreja);
+        
+        response.status(200).json(membros);
+    } catch (error) {
+        console.error('Erro ao listar membros:', error);
+        response.status(500).json({ error: 'Erro no servidor' });
     }
 });
 

@@ -76,4 +76,20 @@ async function getIgrejas() {
     }
 }
 
-export default {createUser, selectUserIdIgreja, selectUser, updateUser, selectUserOnly, getIgrejas};
+async function getUserById(id_user) {
+    const sql = 'SELECT id_user, nome, email, cargo, id_igreja FROM user WHERE id_user = ?';
+    
+    const conn = await banco.connect();
+    try {
+        const [rows] = await conn.query(sql, [id_user]);
+        return rows[0]; // Retorna apenas o usuário encontrado
+    } catch (error) {
+        console.error('Erro ao buscar usuário:', error);
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
+
+
+export default {createUser, selectUserIdIgreja, selectUser, updateUser, selectUserOnly, getIgrejas, getUserById};

@@ -36,7 +36,7 @@ CREATE TABLE departamentos (
 
 CREATE TABLE membro (
     id_membro INT AUTO_INCREMENT PRIMARY KEY,
-    cod_membro VARCHAR(16) UNIQUE NOT NULL,
+    cod_membro VARCHAR(16) NOT NULL,
     nome VARCHAR(150) NOT NULL,
     numero INT(25),
     birth DATE NOT NULL,
