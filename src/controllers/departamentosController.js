@@ -1,11 +1,16 @@
 import express from 'express';
 import db from '../services/departamentosServices.js';
+import verifyJWT from '../middlewares/jwt.js';
 
 const routes = express.Router();
 
+routes.use(verifyJWT);
+
 routes.post('/', async (request, response) => {
     try{
-        const{nome, birth, data_congresso, id_igreja}=request.body;
+        const{nome, birth, data_congresso}=request.body;
+       
+        const id_igreja = request.user.id_igreja;
 
         await db.createDepartamentos(nome, birth, data_congresso, id_igreja);
 
@@ -31,10 +36,10 @@ routes.put('/:id_departamento/:id_igreja', async (request, response) => {
 });
 
 routes.get('/', async (request, response) => {
-    try{
-        const { id_departamento } = request.params;
-
-        const departamento = await db.selectDepartamento(id_departamento);
+    try{        
+        const id_igreja = request.user.id_igreja; 
+        
+        const departamento = await db.selectDepartamento(id_igreja);
  
         if (departamento) {
             response.status(200).send(departamento);
