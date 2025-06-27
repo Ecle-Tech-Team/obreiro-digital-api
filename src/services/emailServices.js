@@ -20,7 +20,6 @@ async function sendEmail(to, subject, html) {
 
     try {
         await transporter.sendMail(mailOptions);
-        console.log(`Email enviado para ${to}`);
     } catch (error) {
         console.error('Erro ao enviar email:', error);
     }

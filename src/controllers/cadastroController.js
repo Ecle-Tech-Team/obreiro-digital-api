@@ -22,7 +22,7 @@ routes.put('/:id_user', verifyJWT, async (request, response) => {
     try {
         const { id_user } = request.params;
         
-        const {email, ...userData} = request.body;
+        const { email, senha, ...userData } = request.body;
         
         const user = await db.getUserById(id_user);
 
@@ -32,7 +32,11 @@ routes.put('/:id_user', verifyJWT, async (request, response) => {
 
         const oldEmail = user.email;
 
-        await db.updateUserPartial(id_user, { ...userData, email });
+        const userDataToUpdate = { ...userData };
+        if (email) userDataToUpdate.email = email;
+        if (senha) userDataToUpdate.senha = senha;
+
+        await db.updateUserPartial(id_user, userDataToUpdate);
 
         if (email && oldEmail && email !== oldEmail) {
             await sendEmail(
@@ -50,6 +54,25 @@ routes.put('/:id_user', verifyJWT, async (request, response) => {
                     </div>
                 `
             );
+        }
+
+        else if (senha){
+            await sendEmail(
+                user.email,
+                'Sua senha foi alterada',
+                `
+                    <div style="font-family: Arial, sans-serif; padding: 20px;">                        
+                        <h2 style="color: #15616D;">Confirmação de Alteração de Senha</h2>                        
+                        <p>Olá,</p>
+                        <p>Informamos que a senha da sua conta foi alterada com sucesso.</p>
+                        <p>Se você não reconhece essa alteração, entre em contato com o suporte imediatamente.</p>
+                        <h4 style="color: #15616D;">Atenciosamente,<br>Equipe Obreiro Digital</h4>
+                        <br/>
+                        <p style="font-size: 12px; color: #888;">Este é um email automático, por favor, não responda.</p>
+                    </div>
+                `
+            );
+        
         }
 
         response.status(200).send({ message: "Usuário atualizado com sucesso." });
