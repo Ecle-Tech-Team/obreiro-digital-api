@@ -1,5 +1,6 @@
 import express from 'express';
 import db from '../services/cadastroService.js';
+import verifyJWT from '../middlewares/jwt.js';
 
 const routes = express.Router();
 
@@ -16,13 +17,13 @@ routes.post('/', async (request, response) => {
     }
 });
 
-routes.put('/:id_user', async (request, response) => {
+routes.put('/:id_user', verifyJWT, async (request, response) => {
     try {
         const { id_user } = request.params;
         
-        const { cod_membro, nome, email, senha, birth, cargo, id_igreja } = request.body;
+        const userData = request.body;
 
-        await db.updateUser(id_user, cod_membro, nome, email, senha, birth, cargo, id_igreja);
+        await db.updateUserPartial(id_user, userData);
 
         response.status(200).send({ message: "Usuário atualizado com sucesso." });
     } catch (error) {

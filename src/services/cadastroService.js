@@ -11,14 +11,35 @@ async function createUser(cod_membro, nome, email, senha, birth, cargo, id_igrej
     conn.end();      
 }
 
-async function updateUser(id_user, cod_membro, nome, email, senha, birth, cargo, id_igreja) {
-    const sql = "UPDATE user SET cod_membro = ?, nome = ?, email = ?, senha = ?, birth = ?, cargo = ?, id_igreja = ? WHERE id_user = ?";
+async function updateUserPartial(id_user, userData) {
+    const allowedFields = ['cod_membro', 'nome', 'email', 'senha', 'birth', 'cargo', 'id_igreja'];
     
-    const values = [cod_membro, nome, email, senha, birth, cargo, id_igreja, id_user];
+    const fieldsToUpdate = [];
+    const values = [];
+
+    for (const field of allowedFields) {
+        if (userData.hasOwnProperty(field)) {
+            fieldsToUpdate.push(`${field} = ?`);
+            values.push(userData[field]);
+        }
+    }
+
+    if (fieldsToUpdate.length === 0) {
+        throw new Error("Nenhum campo válido fornecido para atualização.");
+    }
+
+    const sql = `UPDATE user SET ${fieldsToUpdate.join(', ')} WHERE id_user = ?`;
+
+    values.push(id_user);
 
     const conn = await banco.connect();
-    await conn.query(sql, values);
-    conn.end();      
+    try {
+        await conn.query(sql, values);
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
 }
 
 async function selectUserOnly(id_user) {
@@ -92,4 +113,4 @@ async function getUserById(id_user) {
 }
 
 
-export default {createUser, selectUserIdIgreja, selectUser, updateUser, selectUserOnly, getIgrejas, getUserById};
+export default {createUser, selectUserIdIgreja, selectUser, updateUserPartial, selectUserOnly, getIgrejas, getUserById};
