@@ -8,10 +8,11 @@
     "cep-promise": "^4.4.0",
     "cors": "^2.8.5",
     "date-fns": "^3.0.6",
+    "dotenv": "^16.6.0",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.6.0",
-    "nodemailer": "^6.9.7"
+    "nodemailer": "^6.10.1"
   },
   "scripts": {
     "start": "nodemon src/index.js"

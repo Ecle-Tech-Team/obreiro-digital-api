@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../services/cadastroService.js';
 import verifyJWT from '../middlewares/jwt.js';
+import sendEmail from '../services/emailServices.js';
 
 const routes = express.Router();
 
@@ -21,9 +22,35 @@ routes.put('/:id_user', verifyJWT, async (request, response) => {
     try {
         const { id_user } = request.params;
         
-        const userData = request.body;
+        const {email, ...userData} = request.body;
+        
+        const user = await db.getUserById(id_user);
 
-        await db.updateUserPartial(id_user, userData);
+        if (!user) {
+            return response.status(404).send("Usuário não encontrado.");
+        }
+
+        const oldEmail = user.email;
+
+        await db.updateUserPartial(id_user, { ...userData, email });
+
+        if (email && oldEmail && email !== oldEmail) {
+            await sendEmail(
+                oldEmail && email,
+                'Seu email foi alterado',
+                `
+                    <div style="font-family: Arial, sans-serif; padding: 20px;">                        
+                        <h2 style="color: #15616D;">Confirmação de Alteração de Email</h2>                        
+                        <p>Olá,</p>
+                        <p>Informamos que o email da sua conta foi alterado com sucesso.</p>
+                        <p>Se você não reconhece essa alteração, entre em contato com o suporte imediatamente.</p>
+                        <h4 style="color: #15616D;">Atenciosamente,<br>Equipe Obreiro Digital</h4>
+                        <br/>
+                        <p style="font-size: 12px; color: #888;">Este é um email automático, por favor, não responda.</p>
+                    </div>
+                `
+            );
+        }
 
         response.status(200).send({ message: "Usuário atualizado com sucesso." });
     } catch (error) {
