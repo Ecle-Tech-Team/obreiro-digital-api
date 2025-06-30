@@ -11,6 +11,7 @@ import pedido from './controllers/pedidoController.js';
 import evento from './controllers/eventoController.js';
 import perfil from './controllers/perfilController.js';
 import recSenha from './controllers/passwordController.js';
+import report from './controllers/reportController.js';
 import consultCep from './helpers/cep.js';
 import recLogin from './controllers/recoverLogin.js';
 
@@ -29,6 +30,7 @@ route.use ('/evento', evento);
 route.use ('/pedido', pedido);
 route.use ('/perfil', perfil);
 route.use('/recuperarLogin', recLogin);
+route.use('/report', report);
 
 //http://localhost:3333/(routes)
 
