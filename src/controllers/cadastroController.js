@@ -134,4 +134,17 @@ routes.get('/cadastro/igreja', async (request, response) => {
     }
 });
 
+routes.delete('/:id_user', verifyJWT, async (request, response) => {
+    try {
+        const { id_user } = request.params;
+
+        await db.deleteUser(id_user);
+
+        response.status(200).send({ message: "Usuário removido com sucesso." });
+
+    } catch (error) {        
+        response.status(500).send(`Erro ao deletar usuário: ${error}`);
+    }
+});
+
 export default routes;

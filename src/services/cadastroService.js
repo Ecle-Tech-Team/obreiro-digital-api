@@ -112,5 +112,18 @@ async function getUserById(id_user) {
     }
 }
 
+async function deleteUser(id_user) {
+    const conn = await banco.connect();
+    try {
+         // Desvincula os bug reports do usuário
+        await conn.query("UPDATE bug_reports SET id_user = NULL WHERE id_user = ?", [id_user]);       
+        // Agora remove o usuário
+        await conn.query("DELETE FROM user WHERE id_user = ?", [id_user]);
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
 
-export default {createUser, selectUserIdIgreja, selectUser, updateUserPartial, selectUserOnly, getIgrejas, getUserById};
+export default {createUser, selectUserIdIgreja, selectUser, updateUserPartial, selectUserOnly, getIgrejas, getUserById, deleteUser};

@@ -19,7 +19,7 @@ CREATE TABLE igreja (
 
 CREATE TABLE user (
     id_user INT AUTO_INCREMENT PRIMARY KEY,
-    cod_membro VARCHAR(16) UNIQUE NOT NULL,
+    cod_membro VARCHAR(16) NOT NULL,
     nome VARCHAR(150) NOT NULL,
     email VARCHAR(150) NOT NULL,
     senha VARCHAR(16) NOT NULL,
