@@ -108,6 +108,16 @@ CREATE TABLE pedidos (
     respondido BOOLEAN NOT NULL DEFAULT false
 );
 
+CREATE TABLE bug_reports (
+    id_report INT AUTO_INCREMENT PRIMARY KEY,
+    id_user INT NOT NULL,
+    motivo VARCHAR(255) NOT NULL,
+    descricao TEXT NOT NULL,
+    data_criacao DATETIME NOT NULL,
+    
+    FOREIGN KEY (id_user) REFERENCES user(id_user)
+);
+
 ALTER TABLE membro
 ADD COLUMN id_igreja INT,
 ADD CONSTRAINT fk_membros_igrejas FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja);
