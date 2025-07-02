@@ -1,11 +1,17 @@
 import express from 'express';
 import db from '../services/pedidoServices.js';
+import verifyJWT from '../middlewares/jwt.js';
 
 const routes = express.Router();
 
+// Todas as rotas protegidas por JWT
+routes.use(verifyJWT);
+
 routes.post('/', async (request, response) => {
     try {
-        const { nome_produto, categoria_produto,quantidade, data_pedido, id_igreja } = request.body;
+        const { nome_produto, categoria_produto,quantidade, data_pedido } = request.body;
+
+        const id_igreja = request.user.id_igreja;
 
         await db.createPedido(nome_produto, categoria_produto, quantidade, data_pedido, id_igreja);
 
@@ -30,7 +36,11 @@ routes.get('/:id_igreja', async (request, response) => {
         
         const pedidos = await db.selectPedidos(id_igreja);
 
-        response.status(200).send(pedidos);
+        if (pedidos) {
+            response.status(201).send(pedidos);
+        } else {
+            response.status(404).send("Pedido não encontrado!");
+        }
     } catch (error) {
         response.status(500).send(`Erro na requisição! ${error}`);
     }
