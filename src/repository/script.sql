@@ -118,6 +118,15 @@ CREATE TABLE bug_reports (
     FOREIGN KEY (id_user) REFERENCES user(id_user)
 );
 
+CREATE TABLE avisos (
+    id_aviso INT AUTO_INCREMENT PRIMARY KEY,
+    titulo VARCHAR(150) NOT NULL,
+    conteudo TEXT NOT NULL,
+    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_igreja INT NOT NULL,
+    FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja) ON DELETE CASCADE
+);
+
 ALTER TABLE membro
 ADD COLUMN id_igreja INT,
 ADD CONSTRAINT fk_membros_igrejas FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja);
