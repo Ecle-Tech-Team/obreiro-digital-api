@@ -140,4 +140,18 @@ async function countPedidosTotais(id_igreja) {
     }
 }
 
-export default { createPedido, getIgrejas, responderPedido, selectPedidos, updatePedidos, countPedidosEntregues, countPedidosEmAndamento, countPedidosRecusados, countPedidosTotais };
+
+async function deletePedido(id_pedido) {
+    const sql = "DELETE FROM pedidos WHERE id_pedido = ?";
+    const conn = await banco.connect();
+    try {
+        await conn.query(sql, [id_pedido]);
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
+
+
+export default { createPedido, getIgrejas, responderPedido, selectPedidos, updatePedidos, countPedidosEntregues, countPedidosEmAndamento, countPedidosRecusados, countPedidosTotais, deletePedido };

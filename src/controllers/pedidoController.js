@@ -124,4 +124,17 @@ routes.get('/count/total/:id_igreja', async (request, response) => {
     }
 });
 
+routes.delete('/:id_pedido', async (request, response) => {
+    try {
+        const { id_pedido } = request.params;
+
+        await db.deletePedido(id_pedido);
+
+        response.status(200).send({ message: "Pedido removido com sucesso." });
+
+    } catch (error) {        
+        response.status(500).send(`Erro ao deletar Pedido: ${error}`);
+    }
+});
+
 export default routes;
