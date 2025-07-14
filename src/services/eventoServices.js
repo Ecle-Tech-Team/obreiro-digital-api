@@ -35,10 +35,10 @@ async function selectEventos(id_igreja) {
     return rows;
 }
 
-async function updateEvento(id_evento, nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_igreja) {
-    const sql = "UPDATE eventos SET nome = ?, data_inicio = ?, horario_inicio = ?, data_fim = ?, horario_fim = ?, local = ?, id_igreja = ? WHERE id_evento = ?";
+async function updateEvento(id_evento, nome, data_inicio, horario_inicio, data_fim, horario_fim, local) {
+    const sql = "UPDATE eventos SET nome = ?, data_inicio = ?, horario_inicio = ?, data_fim = ?, horario_fim = ?, local = ? WHERE id_evento = ?";
 
-    const values = [nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_igreja, id_evento];
+    const values = [nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_evento];
 
     const conn = await banco.connect();
     await conn.query(sql, values);
@@ -60,4 +60,14 @@ async function countEventos(id_igreja) {
     }
 }
 
-export default { createEvento, getIgrejas, selectEventos, updateEvento, countEventos };
+async function deleteEvento(id_evento) {
+    const sql = "DELETE FROM eventos WHERE id_evento = ?";
+    const conn = await banco.connect();
+    try {
+        await conn.query(sql, [id_evento]);
+    } finally {
+        conn.end();
+    };
+};
+
+export default { createEvento, getIgrejas, selectEventos, updateEvento, countEventos, deleteEvento };
