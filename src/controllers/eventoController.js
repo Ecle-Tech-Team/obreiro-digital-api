@@ -71,6 +71,26 @@ routes.get('/count/:id_igreja', async (request, response) => {
     }
 });
 
+import avisoDb from '../services/avisosServices.js';
+import { startOfWeek, endOfWeek } from 'date-fns';
+
+routes.get('/semana/:id_igreja', async (request, response) => {
+  try {
+    const { id_igreja } = request.params;
+
+    const hoje = new Date();
+    const semanaInicio = startOfWeek(hoje, { weekStartsOn: 1 }); // Segunda
+    const semanaFim = endOfWeek(hoje, { weekStartsOn: 1 }); // Domingo
+
+    const eventos = await db.selectEventosSemana(id_igreja, semanaInicio, semanaFim);
+    const avisos = await avisoDb.selectAvisos(id_igreja); // assumindo todos avisos da semana já ordenados por data
+
+    response.status(200).json({ eventos, avisos });
+  } catch (error) {
+    response.status(500).send(`Erro ao buscar eventos e avisos da semana: ${error}`);
+  }
+});
+
 routes.delete('/:id_evento', async (req, res) => {
     try {
         const { id_evento } = req.params;

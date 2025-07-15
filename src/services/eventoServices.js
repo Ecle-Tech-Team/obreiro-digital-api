@@ -35,6 +35,19 @@ async function selectEventos(id_igreja) {
     return rows;
 }
 
+async function selectEventosSemana(id_igreja, semanaInicio, semanaFim) {
+  const sql = `
+    SELECT * FROM eventos 
+    WHERE id_igreja = ? 
+      AND data_inicio BETWEEN ? AND ?
+    ORDER BY data_inicio ASC
+  `;
+  const conn = await banco.connect();
+  const [rows] = await conn.query(sql, [id_igreja, semanaInicio, semanaFim]);
+  conn.end();
+  return rows;
+}
+
 async function updateEvento(id_evento, nome, data_inicio, horario_inicio, data_fim, horario_fim, local) {
     const sql = "UPDATE eventos SET nome = ?, data_inicio = ?, horario_inicio = ?, data_fim = ?, horario_fim = ?, local = ? WHERE id_evento = ?";
 
@@ -70,4 +83,4 @@ async function deleteEvento(id_evento) {
     };
 };
 
-export default { createEvento, getIgrejas, selectEventos, updateEvento, countEventos, deleteEvento };
+export default { createEvento, getIgrejas, selectEventosSemana, selectEventos, updateEvento, countEventos, deleteEvento };
