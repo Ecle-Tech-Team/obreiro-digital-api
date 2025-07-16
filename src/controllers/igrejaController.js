@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { request, response } from 'express';
 import db from '../services/igrejaServices.js';
 import verifyJWT from '../middlewares/jwt.js';
 
@@ -6,9 +6,9 @@ const routes = express.Router();
 
 routes.post('/', async (request, response) => {
     try {
-        const { nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade} = request.body;
+        const { nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz} = request.body;
 
-        await db.createIgreja(nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade);
+        await db.createIgreja(nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz);
 
         response.status(201).send({ message: "Cadastro da igreja realizado com sucesso." });
     } catch (error) {
@@ -28,6 +28,27 @@ routes.put('/:id_igreja', verifyJWT, async (request, response) => {
     } catch (error) {
         response.status(500).send(`Erro na requisição! ${error}`);
     }
+});
+
+// Listar todas as igrejas subordinadas a uma matriz
+routes.get('/subordinadas/:id_matriz', verifyJWT, async (request, response) => {
+  try {
+    const igrejas = await db.listarIgrejasSubordinadas(request.params.id_matriz);
+    response.status(200).send(igrejas);
+  } catch (error) {
+    response.status(500).send("Erro ao buscar igrejas subordinadas: " + error);
+  }
+});
+
+// Definir igreja como subordinada de uma matriz
+routes.put('/igreja/vincular', verifyJWT, async (request, response) => {
+  try {
+    const { id_igreja, id_matriz } = request.body;
+    await db.vincularIgrejaAMatriz(id_igreja, id_matriz);
+    response.status(200).send("Igreja vinculada com sucesso");
+  } catch (error) {
+    response.status(500).send("Erro ao vincular igreja: " + error);
+  }
 });
 
 routes.get('/', async (request, response) => {
