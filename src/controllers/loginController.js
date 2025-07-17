@@ -16,7 +16,8 @@ routes.post('/', async (request, response) => {
                 email: user.email, 
                 id_igreja: user.id_igreja, 
                 nome: user.nome, 
-                cargo: user.cargo
+                cargo: user.cargo,
+                id_matriz: user.id_matriz
         });
            
             response.status(200).json({ 
@@ -25,7 +26,8 @@ routes.post('/', async (request, response) => {
                     id_user: user.id_user,
                     nome: user.nome,
                     cargo: user.cargo,
-                    id_igreja: user.id_igreja 
+                    id_igreja: user.id_igreja,
+                    id_matriz: user.id_matriz
                 },
                 token
             });

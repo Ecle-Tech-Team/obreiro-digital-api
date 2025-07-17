@@ -2,7 +2,11 @@ import banco from '../repository/connection.js';
 
 async function login(email, senha){
 
-    const sql = "SELECT id_user, email, nome, cargo, id_igreja FROM user WHERE email = ? AND senha = ?";
+    const sql = `SELECT  
+        u.id_user, u.email, u.nome, u.cargo, u.id_igreja, i.id_matriz
+        FROM user u
+        JOIN igreja i ON u.id_igreja = i.id_igreja
+        WHERE u.email = ? AND u.senha = ?`;
 
     const dataLogin = [email, senha];
 
