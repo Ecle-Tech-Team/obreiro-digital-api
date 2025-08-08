@@ -81,7 +81,7 @@ routes.put('/:id_user', verifyJWT, async (request, response) => {
     }
 });
 
-routes.get('/cadastro', async (request, response) => {
+routes.get('/cadastro', verifyJWT, async (request, response) => {
     console.log('Rota de cadastro acessada');
     try{
         const { id_igreja } = request.params;
@@ -94,7 +94,7 @@ routes.get('/cadastro', async (request, response) => {
     }
 });
 
-routes.get('/', async (request, response) => {
+routes.get('/', verifyJWT, async (request, response) => {
     try{
         const { id_user } = request.params;
 
@@ -110,7 +110,7 @@ routes.get('/', async (request, response) => {
     }
 });
 
-routes.get('/obreiros/:id_igreja', async (request, response) => {
+routes.get('/obreiros/:id_igreja', verifyJWT, async (request, response) => {
     try {
         const { id_igreja } = request.params;
         const consult = await db.selectUserIdIgreja(id_igreja);
