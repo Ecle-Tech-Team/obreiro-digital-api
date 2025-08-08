@@ -19,7 +19,8 @@ function verifyJWT(request, response, next) {
     request.user = {
       id_user: decoded.infoUser.id_login,
       id_igreja: decoded.infoUser.id_igreja,
-      email: decoded.infoUser.email
+      email: decoded.infoUser.email,
+      cargo: decoded.infoUser.cargo
     };
     
     return next();

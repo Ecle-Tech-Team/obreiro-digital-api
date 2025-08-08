@@ -95,6 +95,26 @@ async function selectMembroOnly(id_membro) {
     }
 }
 
+async function selectMembrosPorMatriz(id_matriz) {
+  const sql = `
+   SELECT * FROM membro 
+    WHERE id_igreja = ? 
+    OR id_igreja IN (
+      SELECT id_igreja FROM igreja WHERE id_matriz = ?
+    )
+  `;
+
+  const conn = await banco.connect();
+  try {
+    const [rows] = await conn.query(sql, [id_matriz, id_matriz]);
+    return rows;
+  } catch (error) {
+    throw error;
+  } finally {
+    conn.end();
+  }
+}
+
 async function deleteMembro(id_membro) {
     const sql = "DELETE FROM membro WHERE id_membro = ?";
     const conn = await banco.connect();
@@ -107,4 +127,4 @@ async function deleteMembro(id_membro) {
     }
 }
 
-export default {createMembro, countMembros, updateMembro, selectMembro, selectMembroOnly, getIgrejas, selectDepartamentos, deleteMembro};
+export default {createMembro, countMembros, updateMembro, selectMembro, selectMembroOnly, getIgrejas, selectDepartamentos, selectMembrosPorMatriz, deleteMembro};
