@@ -1,5 +1,6 @@
 import express from 'express';
 import db from '../services/departamentosServices.js';
+import banco from '../repository/connection.js';
 import verifyJWT from '../middlewares/jwt.js';
 
 const routes = express.Router();
@@ -74,6 +75,39 @@ routes.get('/:id_igreja', async (request, response) => {
     } catch (error) {
         response.status(500).send(`Erro na requisição! ${error}`);
     }
+});
+
+routes.get('/matriz/:id_igreja', async (request, response) => {
+    try {
+    const { id_igreja } = request.params;
+
+   const conn = await banco.connect();
+    const [igrejaRows] = await conn.query(
+      "SELECT id_igreja, id_matriz FROM igreja WHERE id_igreja = ?",
+      [id_igreja]
+    );
+    conn.end();
+
+    const igreja = igrejaRows[0];
+
+    if (!igreja) {
+      return response.status(404).json({ error: "Igreja não encontrada" });
+    }
+
+    let departamentos = [];
+
+    // Se a igreja for uma matriz
+    if (igreja.id_igreja === igreja.id_matriz) {
+      departamentos = await db.selectDepartamentosPorMatriz(igreja.id_igreja);
+    } else {
+      departamentos = await db.selectDepartamento(igreja.id_igreja);
+    }
+
+    response.status(200).json(departamentos);
+  } catch (error) {
+    console.error("Erro ao buscar departamentos:", error);
+    response.status(500).json({ error: "Erro ao buscar departamentos" });
+  }
 });
 
 export default routes;

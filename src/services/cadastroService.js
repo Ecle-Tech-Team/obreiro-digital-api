@@ -112,6 +112,26 @@ async function getUserById(id_user) {
     }
 }
 
+async function selectUsersPorMatriz(id_matriz) {
+  const sql = `
+   SELECT * FROM user 
+    WHERE id_igreja = ? 
+    OR id_igreja IN (
+      SELECT id_igreja FROM igreja WHERE id_matriz = ?
+    )
+  `;
+
+  const conn = await banco.connect();
+  try {
+    const [rows] = await conn.query(sql, [id_matriz, id_matriz]);
+    return rows;
+  } catch (error) {
+    throw error;
+  } finally {
+    conn.end();
+  }
+}
+
 async function deleteUser(id_user) {
     const conn = await banco.connect();
     try {
@@ -126,4 +146,4 @@ async function deleteUser(id_user) {
     }
 }
 
-export default {createUser, selectUserIdIgreja, selectUser, updateUserPartial, selectUserOnly, getIgrejas, getUserById, deleteUser};
+export default {createUser, selectUserIdIgreja, selectUser, updateUserPartial, selectUserOnly, getIgrejas, getUserById, selectUsersPorMatriz, deleteUser};

@@ -70,4 +70,24 @@ async function selectDepartamentoOnly(id_departamento) {
     }
 }
 
-export default {createDepartamentos, updateDepartamento, selectDepartamento, getIgrejas, selectDepartamentoOnly};
+async function selectDepartamentosPorMatriz(id_matriz) {
+  const sql = `
+   SELECT * FROM departamentos 
+    WHERE id_igreja = ? 
+    OR id_igreja IN (
+      SELECT id_igreja FROM igreja WHERE id_matriz = ?
+    )
+  `;
+
+  const conn = await banco.connect();
+  try {
+    const [rows] = await conn.query(sql, [id_matriz, id_matriz]);
+    return rows;
+  } catch (error) {
+    throw error;
+  } finally {
+    conn.end();
+  }
+}
+
+export default {createDepartamentos, updateDepartamento, selectDepartamento, getIgrejas, selectDepartamentoOnly, selectDepartamentosPorMatriz};

@@ -1,5 +1,6 @@
 import express from 'express';
 import db from '../services/cadastroService.js';
+import banco from '../repository/connection.js';
 import verifyJWT from '../middlewares/jwt.js';
 import sendEmail from '../services/emailServices.js';
 
@@ -132,6 +133,39 @@ routes.get('/cadastro/igreja', async (request, response) => {
     } catch (error) {
         response.status(500).send(`Erro na requisição! ${error}`);
     }
+});
+
+routes.get('/matriz/:id_igreja', verifyJWT, async (request, response) => {
+    try {
+    const { id_igreja } = request.params;
+
+    const conn = await banco.connect();
+    const [igrejaRows] = await conn.query(
+      "SELECT id_igreja, id_matriz FROM igreja WHERE id_igreja = ?",
+      [id_igreja]
+    );
+    conn.end();
+
+    const igreja = igrejaRows[0];
+
+    if (!igreja) {
+      return response.status(404).json({ error: "Igreja não encontrada" });
+    }
+
+    let user = [];
+
+    // Se a igreja for uma matriz
+    if (igreja.id_igreja === igreja.id_matriz) {
+      user = await db.selectUsersPorMatriz(igreja.id_igreja);
+    } else {
+      user = await db.selectUserIdIgreja(igreja.id_igreja);
+    }
+
+    response.status(200).json(user);
+  } catch (error) {
+    console.error("Erro ao buscar usuários:", error);
+    response.status(500).json({ error: "Erro ao buscar usuários" });
+  }
 });
 
 routes.delete('/:id_user', verifyJWT, async (request, response) => {
