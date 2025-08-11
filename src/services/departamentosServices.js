@@ -21,7 +21,19 @@ async function updateDepartamento(id_departamento, nome, birth, data_congresso, 
 }
 
 async function selectDepartamento(id_igreja) {
-    const sql = "SELECT * FROM departamentos WHERE id_igreja = ?";
+    const sql = `      
+        SELECT d.id_departamento,
+            d.nome,
+            d.birth,
+            d.data_congresso,
+            d.id_igreja,
+            COUNT(m.id_membro) AS qtd_membros
+        FROM departamentos d
+        LEFT JOIN membro m 
+            ON m.id_departamento = d.id_departamento
+        WHERE d.id_igreja = ?
+        GROUP BY d.id_departamento, d.nome, d.birth, d.data_congresso, d.id_igreja
+    `;
 
     const conn = await banco.connect();
     
