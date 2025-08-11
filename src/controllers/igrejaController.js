@@ -83,12 +83,12 @@ routes.get('/subordinadasUser/:id_user', async (req, res) => {
     }
 
     // 3. Buscar todas as igrejas subordinadas a essa matriz
-    const [igrejasSubordinadas] = await conn.query(
-      'SELECT * FROM igreja WHERE id_matriz = ?',
-      [idIgrejaUsuario]
+    const [igrejas] = await conn.query(
+      'SELECT * FROM igreja WHERE id_igreja = ? OR id_matriz = ?',
+      [idIgrejaUsuario, idIgrejaUsuario]
     );
     conn.end();
-    res.status(200).json(igrejasSubordinadas);
+    res.status(200).json(igrejas);
   } catch (error) {
     console.error('Erro ao buscar igrejas subordinadas:', error);
     res.status(500).json({ error: 'Erro ao buscar igrejas subordinadas' });
