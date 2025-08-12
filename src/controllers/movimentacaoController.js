@@ -18,7 +18,7 @@ routes.put('/cadastro', async (req, res) => {
 // Mover membro
 routes.put('/membro', async (req, res) => {
   const { id_membro, nova_igreja_id } = req.body;
-  const sql = "UPDATE membro SET id_igreja = ? WHERE id_membro = ?";
+  const sql = "UPDATE membro SET id_igreja = ?, id_departamento = NULL WHERE id_membro = ?";
   const conn = await banco.connect();
   await conn.query(sql, [nova_igreja_id, id_membro]);
   conn.end();
