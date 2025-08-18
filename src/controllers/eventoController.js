@@ -1,5 +1,6 @@
 import express from 'express';
 import db from '../services/eventoServices.js';
+import banco from '../repository/connection.js';
 import verifyJWT from '../middlewares/jwt.js';
 
 const routes = express.Router();
@@ -9,10 +10,19 @@ routes.use(verifyJWT);
 
 routes.post('/', async (request, response) => {
     try {
-        const { nome, data_inicio, horario_inicio, data_fim, horario_fim, local } = request.body;
+        const { nome, data_inicio, horario_inicio, data_fim, horario_fim, local, is_global } = request.body;
         const id_igreja = request.user.id_igreja;
 
-        await db.createEvento(nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_igreja);
+         // Se for global, pegamos a matriz dessa igreja
+        let id_matriz = null;
+        if (is_global) {
+            const conn = await banco.connect();
+            const [igrejaInfo] = await conn.query("SELECT id_matriz FROM igreja WHERE id_igreja = ?", [id_igreja]);
+            conn.end();
+            id_matriz = igrejaInfo[0]?.id_matriz || id_igreja; // Se a própria é matriz, usa ela mesma
+        }
+
+        await db.createEvento(nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_igreja, is_global, id_matriz);
 
         response.status(201).send({ message: "Evento cadastrado com sucesso." });
     } catch (error) {
@@ -89,6 +99,22 @@ routes.get('/semana/:id_igreja', async (request, response) => {
   } catch (error) {
     response.status(500).send(`Erro ao buscar eventos e avisos da semana: ${error}`);
   }
+});
+
+routes.get('/matriz/:id_igreja', async (request, response) => {
+    try {
+        const { id_igreja } = request.params;
+
+        const eventos = await db.selectEventosComMatriz(id_igreja);
+
+        if (eventos && eventos.length > 0) {
+            response.status(200).send(eventos);
+        } else {
+            response.status(404).send("Nenhum evento encontrado!");
+        }
+    } catch (error) {
+        response.status(500).send(`Erro na requisição! ${error}`);
+    }
 });
 
 routes.delete('/:id_evento', async (req, res) => {
