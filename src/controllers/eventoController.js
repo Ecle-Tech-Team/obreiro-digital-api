@@ -84,16 +84,18 @@ routes.get('/count/:id_igreja', async (request, response) => {
 import avisoDb from '../services/avisosServices.js';
 import { startOfWeek, endOfWeek } from 'date-fns';
 
-routes.get('/semana/:id_igreja', async (request, response) => {
+routes.get('/semana/:id_igreja/:id_matriz', async (request, response) => {
   try {
-    const { id_igreja } = request.params;
+    const { id_igreja, id_matriz } = request.params;
 
     const hoje = new Date();
     const semanaInicio = startOfWeek(hoje, { weekStartsOn: 1 }); // Segunda
     const semanaFim = endOfWeek(hoje, { weekStartsOn: 1 }); // Domingo
 
-    const eventos = await db.selectEventosSemana(id_igreja, semanaInicio, semanaFim);
-    const avisos = await avisoDb.selectAvisos(id_igreja); // assumindo todos avisos da semana já ordenados por data
+    const eventos = await db.selectEventosSemana(id_igreja, id_matriz, semanaInicio, semanaFim);
+    const avisosLocal = await avisoDb.selectAvisos(id_igreja); // assumindo todos avisos da semana já ordenados por data
+    const avisosMatriz = await avisoDb.selectAvisosComMatriz(id_matriz);
+    const avisos = [...avisosMatriz, ...avisosLocal]; // junta os dois
 
     response.status(200).json({ eventos, avisos });
   } catch (error) {

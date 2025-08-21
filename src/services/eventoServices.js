@@ -35,15 +35,15 @@ async function selectEventos(id_igreja) {
     return rows;
 }
 
-async function selectEventosSemana(id_igreja, semanaInicio, semanaFim) {
+async function selectEventosSemana(id_igreja, id_matriz, semanaInicio, semanaFim) {
   const sql = `
     SELECT * FROM eventos 
-    WHERE id_igreja = ? 
+    WHERE (id_igreja = ? OR id_igreja = ?) 
       AND data_inicio BETWEEN ? AND ?
     ORDER BY data_inicio ASC
   `;
   const conn = await banco.connect();
-  const [rows] = await conn.query(sql, [id_igreja, semanaInicio, semanaFim]);
+  const [rows] = await conn.query(sql, [id_igreja, id_matriz, semanaInicio, semanaFim]);
   conn.end();
   return rows;
 }
