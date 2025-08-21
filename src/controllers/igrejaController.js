@@ -132,5 +132,14 @@ routes.get('/:id_igreja', verifyJWT, async (req, res) => {
   }
 });
 
+routes.get('/count/subordinadas/:id_matriz', async (req, res) => {
+  try {
+    const { id_matriz } = req.params;
+    const total = await db.countIgrejasSubordinadas(id_matriz);
+    res.status(200).json(total);
+  } catch (error) {
+    res.status(500).json(`Erro ao buscar quantidade de igrejas subordinadas: ${error}`);
+  }
+});
 
 export default routes;

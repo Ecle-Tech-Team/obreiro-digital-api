@@ -64,4 +64,17 @@ async function getIgrejaById(id_igreja) {
   }
 }
 
-export default { createIgreja, updateIgreja, listarIgrejasSubordinadas, vincularIgrejaAMatriz, getIgrejas, getIgrejaById };
+async function countIgrejasSubordinadas(id_matriz) {
+  const sql = "SELECT COUNT(*) as total FROM igreja WHERE id_matriz = ?";
+  const conn = await banco.connect();
+  try {
+    const [rows] = await conn.query(sql, [id_matriz]);
+    return rows[0].total;
+  } catch (error) {
+    throw error;
+  } finally {
+    conn.end();
+  }
+}
+
+export default { createIgreja, updateIgreja, listarIgrejasSubordinadas, vincularIgrejaAMatriz, getIgrejas, getIgrejaById, countIgrejasSubordinadas };
