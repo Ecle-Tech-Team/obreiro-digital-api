@@ -1,11 +1,16 @@
 import express from 'express';
 import db from '../services/estoqueServices.js';
+import verifyJWT from '../middlewares/jwt.js';
 
 const routes = express.Router();
 
+routes.use(verifyJWT);
+
 routes.post('/', async (request, response) => {
     try {
-        const { cod_produto, categoria, nome_produto, quantidade, validade, preco_unitario, id_igreja } = request.body;
+        const { cod_produto, categoria, nome_produto, quantidade, validade, preco_unitario } = request.body;
+
+        const id_igreja = request.user.id_igreja;
 
         await db.createProduto(cod_produto, categoria, nome_produto, quantidade, validade, preco_unitario, id_igreja);
 
@@ -67,6 +72,19 @@ routes.get('/search', async (request, response) => {
         }
     } catch (error) {
         response.status(500).send(`Erro na requisição! ${error}`);
+    }
+});
+
+routes.delete('/:id_produto', async (request, response) => {
+    try {
+        const { id_produto } = request.params;
+
+        await db.deleteProduto(id_produto);
+
+        response.status(200).send({ message: "Produto removido com sucesso." });
+
+    } catch (error) {        
+        response.status(500).send(`Erro ao deletar produto: ${error}`);
     }
 });
 

@@ -62,4 +62,16 @@ async function searchProdutos(termoPesquisa) {
     return rows;
 }
 
-export default { createProduto, updateEstoque, getIgrejas, selectEstoque, searchProdutos };
+async function deleteProduto(id_produto) {
+    const sql = "DELETE FROM estoque WHERE id_produto = ?";
+    const conn = await banco.connect();
+    try {
+        await conn.query(sql, [id_produto]);
+    } catch (error) {
+        throw error;
+    } finally {
+        conn.end();
+    }
+}
+
+export default { createProduto, updateEstoque, getIgrejas, selectEstoque, searchProdutos, deleteProduto };
