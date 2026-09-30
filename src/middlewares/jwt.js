@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
+import 'dotenv/config';
 
-const secret = '1501222724';
+const secret = process.env.JWT_SECRET;
 
 function verifyJWT(request, response, next) {
   const authHeader = request.headers.authorization;
