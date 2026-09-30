@@ -10,6 +10,6 @@ api.use(cors());
 
 api.use('/', routes);
 
-api.listen (3333, () => {
+api.listen (Number(process.env.API_PORT || 3333), () => {
     console.log('Servidor em produção...');
 });

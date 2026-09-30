@@ -2,6 +2,7 @@ import express from 'express';
 import db from '../services/checkServices.js';
 import { generatePassword } from '../helpers/generatePassword.js';
 import nodemailer from 'nodemailer';
+import 'dotenv/config';
 
 const routes = express.Router();
 
@@ -19,8 +20,8 @@ routes.post('/', async (request, response) => {
             const transporter = nodemailer.createTransport({
                 service: "gmail",              
                 auth: {
-                    user: "ecletecnologia@gmail.com",
-                    pass: "rjlr sijm ykso cidn",
+                    user: process.env.EMAIL_CONTATO,
+                    pass: process.env.SENHA_CONTATO,
                 },
                 tls: {
                     rejectUnauthorized: false,
@@ -28,7 +29,7 @@ routes.post('/', async (request, response) => {
             });
 
             await transporter.sendMail({
-                from: "Obreiro Digital <ecletecnologia@gmail.com>",
+                from: `Obreiro Digital <${process.env.EMAIL_CONTATO}>`,
                 to: email,
                 subject: "Recuperação de Senha",
                 html: `<h1>Solicitação realizada com sucesso!</h1>
