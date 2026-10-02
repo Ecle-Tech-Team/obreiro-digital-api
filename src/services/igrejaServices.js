@@ -6,8 +6,12 @@ async function createIgreja(nome, cnpj, data_fundacao, setor, ministerio, cep, e
     const values = [nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz || null];
     
     const conn = await banco.connect();
-    conn.query(sql, values);    
-    conn.end();    
+    try {
+        const [result] = await conn.query(sql, values);
+        return result.insertId;
+    } finally {
+        await conn.end();
+    }
 }
 
 async function updateIgreja(nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_igreja) {

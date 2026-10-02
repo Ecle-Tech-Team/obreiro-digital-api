@@ -9,21 +9,19 @@ routes.post('/', async (request, response) => {
     try {
         const { nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz} = request.body;
 
-        await db.createIgreja(nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz);
-        
-        if (!id_matriz) {
-          return response.status(400).json({ message: "id_matriz é obrigatório para igrejas subordinadas." });
+        if (!nome || !cnpj || !data_fundacao || !ministerio || !cep || !endereco || !bairro || !cidade) {
+          return response.status(400).json({ message: 'Preencha os campos obrigatórios da igreja.' });
         }
 
-        const [[matrizExiste]] = await conn.query(
-          'SELECT * FROM igreja WHERE id_igreja = ? AND id_matriz IS NULL',
-          [id_matriz]
-        );
-
-        if (!matrizExiste) {
-          return response.status(400).json({ message: "A igreja matriz fornecida não existe ou não é uma matriz válida." });
+        if (id_matriz) {
+          const matriz = await db.getIgrejaById(id_matriz);
+          if (!matriz || matriz.id_matriz !== null) {
+            return response.status(400).json({ message: 'A igreja matriz fornecida não é válida.' });
+          }
         }
-        response.status(201).send({ message: "Cadastro da igreja realizado com sucesso." });
+
+        const id_igreja = await db.createIgreja(nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz || null);
+        response.status(201).json({ message: 'Cadastro da igreja realizado com sucesso.', id_igreja });
     } catch (error) {
         response.status(500).send(`Erro na requisição! ${error}`);
     }
