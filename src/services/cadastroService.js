@@ -7,8 +7,11 @@ async function createUser(cod_membro, nome, email, senha, birth, cargo, id_igrej
     const values = [cod_membro, nome, email, senha, birth, cargo, id_igreja];
 
     const conn = await banco.connect();
-    conn.query(sql, values); 
-    conn.end();      
+    try {
+        await conn.query(sql, values);
+    } finally {
+        await conn.end();
+    }
 }
 
 async function updateUserPartial(id_user, userData) {
