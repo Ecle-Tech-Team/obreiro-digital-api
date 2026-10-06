@@ -1,4 +1,5 @@
 -- Schema derivado de obreiro-digital-api/src/repository/script.sql (linhas 5 ate antes do trigger).
+SET NAMES utf8mb4;
 -- O DROP DATABASE e todos os INSERTs de exemplo foram excluidos.
 
 -- IGREJA COM SUPORTE À MATRIZ
@@ -154,7 +155,7 @@ CREATE TABLE avisos (
 -- BUG REPORTS
 CREATE TABLE bug_reports (
     id_report INT AUTO_INCREMENT PRIMARY KEY,
-    id_user INT NOT NULL,
+    id_user INT NULL,
     motivo VARCHAR(255) NOT NULL,
     descricao TEXT NOT NULL,
     data_criacao DATETIME NOT NULL,

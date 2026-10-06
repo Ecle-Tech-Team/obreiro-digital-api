@@ -2,6 +2,7 @@ import express from 'express';
 import db from '../services/membrosServices.js';
 import banco from '../repository/connection.js';
 import verifyJWT from '../middlewares/jwt.js';
+import securityRepository from '../repository/securityRepository.js';
 
 const routes = express.Router();
 
@@ -18,7 +19,7 @@ routes.post('/', async (request, response) => {
         response.status(201).json({ message: "Membro cadastrado com sucesso" });
               
     } catch (error) {
-        response.status(500).json({ error: `Erro: ${error.message}` });
+        response.status(500).json({ error: 'Erro interno.' });
     }
 });
 
@@ -30,7 +31,7 @@ routes.get('/count/:id_igreja', async (request, response) => {
         
         response.status(200).json(totalMembros);
     } catch (error) {
-        response.status(500).json(`Erro na requisição! ${error}`);
+        response.status(500).json({ error: 'Erro interno.' });
     }
 });
 
@@ -44,17 +45,17 @@ routes.put('/:id_membro/:id_igreja', async (request, response) => {
 
         response.status(200).send({ message: "Membro atualizado com sucesso." });
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
 routes.get('/departamentos', async (request, response) => {
     try{
-        const departamento = await db.selectDepartamentos();
+        const departamento = await db.selectDepartamentos(request.user.id_igreja);
 
         response.status(201).send(departamento);
     } catch (error) {
-        response.status(500).send(`Erro ao consultar cargo! ${error}`)
+        response.status(500).send('Erro interno.')
     }
 })
 
@@ -70,16 +71,16 @@ routes.get('/:id_membro', async (request, response) => {
             response.status(404).send("Membro não encontrado!");
         }
     } catch (error){
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
 routes.get('/membro/igreja', async (request, response) => {
     try {
-        const igrejas = await db.getIgrejas();
+        const igrejas = await securityRepository.listVisibleChurches(request.user);
         response.status(200).send(igrejas);        
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
         console.log(error)
     }
 });
@@ -97,7 +98,7 @@ routes.get('/igreja/:id_igreja', async (request, response) => {
             response.status(404).send("Nenhum membro encontrado!");
         }
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -139,12 +140,12 @@ routes.delete('/:id_membro', async (request, response) => {
     try {
         const { id_membro } = request.params;
 
-        await db.deleteMembro(id_membro);
+        await db.deleteMembro(id_membro, request.user.id_igreja);
 
         response.status(200).send({ message: "Membro removido com sucesso." });
 
     } catch (error) {        
-        response.status(500).send(`Erro ao deletar membro: ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 

@@ -25,11 +25,11 @@ async function getIgrejas() {
   }
 }
 
-async function selectMembros() {
-  const sql = "SELECT * FROM membro"
+async function selectMembros(id_igreja) {
+  const sql = "SELECT * FROM membro WHERE id_igreja = ?"
 
   const conn = await banco.connect();
-  const [rows] = await conn.query(sql);
+  const [rows] = await conn.query(sql, [id_igreja]);
   conn.end();
 
   return rows;

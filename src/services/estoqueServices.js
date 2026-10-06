@@ -11,13 +11,13 @@ async function createProduto(cod_produto, categoria, nome_produto, quantidade, v
 }
 
 async function updateEstoque(id_produto, cod_produto, categoria, nome_produto, quantidade, validade, preco_unitario, id_igreja) {
-    const sql = "UPDATE estoque SET cod_produto = ?, categoria = ?, nome_produto = ?, quantidade = ?, validade = ?, preco_unitario = ?, id_igreja = ? WHERE id_produto = ?";
+    const sql = "UPDATE estoque SET cod_produto = ?, categoria = ?, nome_produto = ?, quantidade = ?, validade = ?, preco_unitario = ? WHERE id_produto = ? AND id_igreja = ?";
     
-    const values = [cod_produto, categoria, nome_produto, quantidade, validade, preco_unitario, id_igreja, id_produto];
+    const values = [cod_produto, categoria, nome_produto, quantidade, validade, preco_unitario, id_produto, id_igreja];
 
     const conn = await banco.connect();
-    await conn.query(sql, values);
-    conn.end();      
+    try { const [result] = await conn.query(sql, values); if (result.affectedRows !== 1) throw new Error('Produto não encontrado.'); }
+    finally { await conn.end(); }
 }
 
 async function getIgrejas() {
@@ -50,10 +50,10 @@ async function selectEstoque(id_igreja) {
     };
 };
 
-async function searchProdutos(termoPesquisa) {
-    const sql = "SELECT * FROM estoque WHERE cod_produto = ? OR nome_produto LIKE ?";
+async function searchProdutos(termoPesquisa, id_igreja) {
+    const sql = "SELECT * FROM estoque WHERE id_igreja = ? AND (cod_produto = ? OR nome_produto LIKE ?)";
     
-    const values = [termoPesquisa, `%${termoPesquisa}%`];
+    const values = [id_igreja, termoPesquisa, `%${termoPesquisa}%`];
 
     const conn = await banco.connect();
     const [rows] = await conn.query(sql, values);
@@ -62,11 +62,12 @@ async function searchProdutos(termoPesquisa) {
     return rows;
 }
 
-async function deleteProduto(id_produto) {
-    const sql = "DELETE FROM estoque WHERE id_produto = ?";
+async function deleteProduto(id_produto, id_igreja) {
+    const sql = "DELETE FROM estoque WHERE id_produto = ? AND id_igreja = ?";
     const conn = await banco.connect();
     try {
-        await conn.query(sql, [id_produto]);
+        const [result] = await conn.query(sql, [id_produto, id_igreja]);
+        if (result.affectedRows !== 1) throw new Error('Produto não encontrado.');
     } catch (error) {
         throw error;
     } finally {

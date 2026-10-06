@@ -1,13 +1,15 @@
 import express, { request, response } from 'express';
 import db from '../services/igrejaServices.js';
-import banco from '../repository/connection.js';
 import verifyJWT from '../middlewares/jwt.js';
+import { generateRegistrationToken } from '../helpers/userFeatures.js';
+import securityRepository from '../repository/securityRepository.js';
 
 const routes = express.Router();
 
 routes.post('/', async (request, response) => {
     try {
         const { nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz} = request.body;
+        if (id_matriz) return response.status(403).json({ message: 'Vínculo com matriz requer autorização.' });
 
         if (!nome || !cnpj || !data_fundacao || !ministerio || !cep || !endereco || !bairro || !cidade) {
           return response.status(400).json({ message: 'Preencha os campos obrigatórios da igreja.' });
@@ -21,9 +23,9 @@ routes.post('/', async (request, response) => {
         }
 
         const id_igreja = await db.createIgreja(nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz || null);
-        response.status(201).json({ message: 'Cadastro da igreja realizado com sucesso.', id_igreja });
+        response.status(201).json({ message: 'Cadastro da igreja realizado com sucesso.', id_igreja, nome, registration_token: generateRegistrationToken(id_igreja) });
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -37,7 +39,7 @@ routes.put('/:id_igreja', verifyJWT, async (request, response) => {
 
         response.status(200).send({ message: "Igreja atualizada com sucesso." });
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -47,46 +49,19 @@ routes.get('/subordinadas/:id_matriz', verifyJWT, async (request, response) => {
     const igrejas = await db.listarIgrejasSubordinadas(request.params.id_matriz);
     response.status(200).send(igrejas);
   } catch (error) {
-    response.status(500).send("Erro ao buscar igrejas subordinadas: " + error);
+    response.status(500).send('Erro interno.');
   }
 });
 
 // Listar igrejs subordinadas do usuário 
 routes.get('/subordinadasUser/:id_user', async (req, res) => {
-  const { id_user } = req.params;
-
   try {
-    const conn = await banco.connect();
-
-    // 1. Pegar o id_igreja do usuário
-    const [[usuario]] = await conn.query(
-      'SELECT id_igreja FROM user WHERE id_user = ?',
-      [id_user]
-    );
-
-    if (!usuario || !usuario.id_igreja) {
-      return res.status(404).json({ message: 'Usuário não encontrado ou sem igreja associada' });
-    }
-
-    const idIgrejaUsuario = usuario.id_igreja;
-
-    // 2. Verificar se a igreja do usuário é uma matriz
-    const [[igrejaUsuario]] = await conn.query(
-      'SELECT * FROM igreja WHERE id_igreja = ? AND id_matriz IS NULL',
-      [idIgrejaUsuario]
-    );
-
-    if (!igrejaUsuario) {
+    const igreja = await db.getIgrejaById(req.user.id_igreja);
+    if (!igreja || igreja.id_matriz != null) {
       return res.status(403).json({ message: 'Usuário não pertence a uma igreja matriz' });
     }
-
-    // 3. Buscar todas as igrejas subordinadas a essa matriz
-    const [igrejas] = await conn.query(
-      'SELECT * FROM igreja WHERE id_igreja = ? OR id_matriz = ?',
-      [idIgrejaUsuario, idIgrejaUsuario]
-    );
-    conn.end();
-    res.status(200).json(igrejas);
+    const subordinadas = await db.listarIgrejasSubordinadas(igreja.id_igreja);
+    res.status(200).json([igreja, ...subordinadas]);
   } catch (error) {
     console.error('Erro ao buscar igrejas subordinadas:', error);
     res.status(500).json({ error: 'Erro ao buscar igrejas subordinadas' });
@@ -101,16 +76,16 @@ routes.put('/igreja/vincular', verifyJWT, async (request, response) => {
     await db.vincularIgrejaAMatriz(id_igreja, id_matriz);
     response.status(200).send("Igreja vinculada com sucesso");
   } catch (error) {
-    response.status(500).send("Erro ao vincular igreja: " + error);
+    response.status(500).send('Erro interno.');
   }
 });
 
 routes.get('/', async (request, response) => {
     try {
-        const igrejas = await db.getIgrejas();
+        const igrejas = await securityRepository.listVisibleChurches(request.user);
         response.status(200).send(igrejas);
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -126,7 +101,7 @@ routes.get('/:id_igreja', verifyJWT, async (req, res) => {
       res.status(404).json({ message: "Igreja não encontrada" });
     }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Erro interno.' });
   }
 });
 
@@ -136,7 +111,7 @@ routes.get('/count/subordinadas/:id_matriz', async (req, res) => {
     const total = await db.countIgrejasSubordinadas(id_matriz);
     res.status(200).json(total);
   } catch (error) {
-    res.status(500).json(`Erro ao buscar quantidade de igrejas subordinadas: ${error}`);
+    res.status(500).json({ error: 'Erro interno.' });
   }
 });
 

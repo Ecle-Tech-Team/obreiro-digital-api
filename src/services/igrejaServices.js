@@ -1,18 +1,28 @@
 import banco from '../repository/connection.js';
 
-async function createIgreja(nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz) {
+export function createChurchFactory(database) { return async function createIgreja(nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz) {
     const sql = "INSERT INTO igreja(nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
     const values = [nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz || null];
     
-    const conn = await banco.connect();
+    const conn = await database.connect();
     try {
+        await conn.beginTransaction();
         const [result] = await conn.query(sql, values);
+        const [existing] = await conn.query('SELECT id_saldo FROM saldo WHERE id_igreja = ? FOR UPDATE', [result.insertId]);
+        if (existing.length > 1) throw new Error('Saldo duplicado para a igreja.');
+        if (existing.length === 0) await conn.query('INSERT INTO saldo (saldo_atual, data_atualizacao, id_igreja) VALUES (?, CURDATE(), ?)', ['0.00', result.insertId]);
+        await conn.commit();
         return result.insertId;
+    } catch (error) {
+        await conn.rollback();
+        throw error;
     } finally {
         await conn.end();
     }
-}
+}; }
+
+const createIgreja = createChurchFactory(banco);
 
 async function updateIgreja(nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_igreja) {
     const sql = "UPDATE igreja SET nome = ?, cnpj = ?, data_fundacao = ?, setor = ?, ministerio = ?, cep = ?, endereco = ?, bairro = ?, cidade = ? WHERE id_igreja = ?";
@@ -20,23 +30,22 @@ async function updateIgreja(nome, cnpj, data_fundacao, setor, ministerio, cep, e
     const values = [nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_igreja];
     
     const conn = await banco.connect();
-    conn.query(sql, values);    
-    conn.end();    
+    try { await conn.query(sql, values); }
+    finally { await conn.end(); }
 }
 
 async function listarIgrejasSubordinadas(id_matriz) {
   const sql = "SELECT * FROM igreja WHERE id_matriz = ?";
   const conn = await banco.connect();
-  const [rows] = await conn.query(sql, [id_matriz]);
-  conn.end();
-  return rows;
+  try { const [rows] = await conn.query(sql, [id_matriz]); return rows; }
+  finally { await conn.end(); }
 }
 
 async function vincularIgrejaAMatriz(id_igreja, id_matriz) {
   const sql = "UPDATE igreja SET id_matriz = ? WHERE id_igreja = ?";
   const conn = await banco.connect();
-  await conn.query(sql, [id_matriz, id_igreja]);
-  conn.end();
+  try { await conn.query(sql, [id_matriz, id_igreja]); }
+  finally { await conn.end(); }
 }
 
 async function getIgrejas() {

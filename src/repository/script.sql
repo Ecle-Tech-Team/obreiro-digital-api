@@ -1,6 +1,6 @@
-DROP DATABASE IF EXISTS obreiro_digital;
-CREATE DATABASE obreiro_digital;
+CREATE DATABASE IF NOT EXISTS obreiro_digital;
 USE obreiro_digital;
+SET NAMES utf8mb4;
 
 -- IGREJA COM SUPORTE À MATRIZ
 CREATE TABLE igreja (
@@ -155,7 +155,7 @@ CREATE TABLE avisos (
 -- BUG REPORTS
 CREATE TABLE bug_reports (
     id_report INT AUTO_INCREMENT PRIMARY KEY,
-    id_user INT NOT NULL,
+    id_user INT NULL,
     motivo VARCHAR(255) NOT NULL,
     descricao TEXT NOT NULL,
     data_criacao DATETIME NOT NULL,
@@ -172,34 +172,3 @@ CREATE TABLE bug_reports (
 --     VALUES (0, CURDATE(), NEW.id_igreja);
 -- END //
 -- DELIMITER ;
-
-INSERT INTO igreja (nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz)
-	VALUES ('Assembléia de Deus Jardim São Marcos', '12345678901234', '2022-01-01', '47', 'Ministério do Belém', '06814165', 'Rua Augusto de Almeida Batista', 'Jardim São Marcos', 'Embu das Artes', null);
-	
-INSERT INTO igreja (nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz)
-	VALUES ('Assembléia de Deus Jardim São Francisco', '12345678901234', '2022-01-01', '47', 'Ministério do Belém', '06814165', 'Rua Augusto de Almeida Batista', 'Jardim São Marcos', 'Embu das Artes', 1);
-
-INSERT INTO igreja (nome, cnpj, data_fundacao, setor, ministerio, cep, endereco, bairro, cidade, id_matriz)
-	VALUES ('Assembléia de Deus Jardim São Vicente', '12345678901234', '2022-01-01', '47', 'Ministério do Belém', '06814165', 'Rua Augusto de Almeida Batista', 'Jardim São Marcos', 'Embu das Artes', 1);
-
-INSERT INTO user (cod_membro, nome, email, senha, birth, cargo, id_igreja) 
-	VALUES ('1', 'Adilson', 'pastor@gmail.com', '123', '2004-10-23', 'Pastor', 1);
-
-INSERT INTO user (cod_membro, nome, email, senha, birth, cargo, id_igreja) 
-	VALUES ('11', 'Carlos', 'pastorM@gmail.com', '123', '2004-10-23', 'Pastor Matriz', 1);
-
-INSERT INTO user (cod_membro, nome, email, senha, birth, cargo, id_igreja) 
-	VALUES ('2', 'Samuel', 'obreiro@gmail.com', '123', '2004-10-23', 'Obreiro', 1);
-	
-INSERT INTO user (cod_membro, nome, email, senha, birth, cargo, id_igreja) 
-	VALUES ('22', 'Geraldo', 'obreiroM@gmail.com', '123', '2004-10-23', 'Obreiro Matriz', 2);
-	
-INSERT INTO membro (cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja)
-    VALUES ('111', 'Lucas', '111231231', '2004-10-23', 'Sim', 2, 2);
-    
-INSERT INTO departamentos(nome, birth, data_congresso, id_igreja, id_matriz)
-	VALUES ('Missões', '1978-11-03', '2024-10-10', 2, null);
-
-SELECT * FROM igreja WHERE id_matriz IS NULL;
-SELECT * FROM igreja WHERE id_matriz = 1;
-SELECT * FROM departamentos;

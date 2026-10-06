@@ -3,6 +3,7 @@ import db from '../services/cadastroService.js';
 import banco from '../repository/connection.js';
 import verifyJWT from '../middlewares/jwt.js';
 import sendEmail from '../services/emailServices.js';
+import securityRepository from '../repository/securityRepository.js';
 
 const routes = express.Router();
 
@@ -10,21 +11,25 @@ routes.post('/', async (request, response) => {
     try {
         const{ cod_membro, nome, email, senha, birth, cargo, id_igreja } = request.body;
 
-        await db.createUser(cod_membro, nome, email, senha, birth, cargo, id_igreja);
+        if (request.bootstrapChurchId) {
+            await db.createFirstUser(cod_membro, nome, email, senha, birth, request.bootstrapChurchId);
+        } else {
+            await db.createUser(cod_membro, nome, email, senha, birth, cargo, request.user.id_igreja);
+        }
 
         response.status(201).send({message: "Cadastro realizado com sucesso."})
-              
+
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
 routes.put('/:id_user', verifyJWT, async (request, response) => {
     try {
         const { id_user } = request.params;
-        
+
         const { email, senha, ...userData } = request.body;
-        
+
         const user = await db.getUserById(id_user);
 
         if (!user) {
@@ -37,15 +42,16 @@ routes.put('/:id_user', verifyJWT, async (request, response) => {
         if (email) userDataToUpdate.email = email;
         if (senha) userDataToUpdate.senha = senha;
 
-        await db.updateUserPartial(id_user, userDataToUpdate);
+        await db.updateUserPartial(id_user, userDataToUpdate, request.user.id_igreja);
 
+        try {
         if (email && oldEmail && email !== oldEmail) {
-            await sendEmail(
-                oldEmail && email,
+            await sendEmail.sendEmail(
+                oldEmail,
                 'Seu email foi alterado',
                 `
-                    <div style="font-family: Arial, sans-serif; padding: 20px;">                        
-                        <h2 style="color: #15616D;">Confirmação de Alteração de Email</h2>                        
+                    <div style="font-family: Arial, sans-serif; padding: 20px;">
+                        <h2 style="color: #15616D;">Confirmação de Alteração de Email</h2>
                         <p>Olá,</p>
                         <p>Informamos que o email da sua conta foi alterado com sucesso.</p>
                         <p>Se você não reconhece essa alteração, entre em contato com o suporte imediatamente.</p>
@@ -58,12 +64,12 @@ routes.put('/:id_user', verifyJWT, async (request, response) => {
         }
 
         else if (senha){
-            await sendEmail(
+            await sendEmail.sendEmail(
                 user.email,
                 'Sua senha foi alterada',
                 `
-                    <div style="font-family: Arial, sans-serif; padding: 20px;">                        
-                        <h2 style="color: #15616D;">Confirmação de Alteração de Senha</h2>                        
+                    <div style="font-family: Arial, sans-serif; padding: 20px;">
+                        <h2 style="color: #15616D;">Confirmação de Alteração de Senha</h2>
                         <p>Olá,</p>
                         <p>Informamos que a senha da sua conta foi alterada com sucesso.</p>
                         <p>Se você não reconhece essa alteração, entre em contato com o suporte imediatamente.</p>
@@ -73,41 +79,39 @@ routes.put('/:id_user', verifyJWT, async (request, response) => {
                     </div>
                 `
             );
-        
+
         }
+        } catch (emailError) { console.error('Falha ao enviar notificação de conta:', emailError); }
 
         response.status(200).send({ message: "Usuário atualizado com sucesso." });
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
 routes.get('/cadastro', verifyJWT, async (request, response) => {
-    console.log('Rota de cadastro acessada');
     try{
-        const { id_igreja } = request.params;
+        const id_igreja = request.user.id_igreja;
 
         const users = await db.selectUserIdIgreja(id_igreja);
 
         response.status(200).send(users);
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
 routes.get('/', verifyJWT, async (request, response) => {
     try{
-        const { id_user } = request.params;
+        const user = await db.selectUser(request.user.id_user);
 
-        const user = await db.selectUser(id_user);
- 
         if (user) {
             response.status(201).send(user);
         } else {
             response.status(404).send("Usuário não encontrado!");
         }
     } catch (error){
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -122,16 +126,16 @@ routes.get('/obreiros/:id_igreja', verifyJWT, async (request, response) => {
             response.status(201).send(consult);
         }
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 })
 
 routes.get('/cadastro/igreja', async (request, response) => {
     try {
-        const igrejas = await db.getIgrejas();
+        const igrejas = await securityRepository.listVisibleChurches(request.user);
         response.status(200).send(igrejas);
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -172,12 +176,12 @@ routes.delete('/:id_user', verifyJWT, async (request, response) => {
     try {
         const { id_user } = request.params;
 
-        await db.deleteUser(id_user);
+        await db.deleteUser(id_user, request.user.id_igreja);
 
         response.status(200).send({ message: "Usuário removido com sucesso." });
 
-    } catch (error) {        
-        response.status(500).send(`Erro ao deletar usuário: ${error}`);
+    } catch (error) {
+        response.status(500).send('Erro interno.');
     }
 });
 

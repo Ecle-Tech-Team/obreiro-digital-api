@@ -25,11 +25,11 @@ async function getIgrejas() {
     }
 }
 
-async function responderPedido(id_pedido, status_pedido, data_entrega, motivo_recusa) {
+async function responderPedido(id_pedido, status_pedido, data_entrega, motivo_recusa, id_igreja) {
     const conn = await banco.connect();
 
     try {        
-        const [rows] = await conn.query('SELECT respondido FROM pedidos WHERE id_pedido = ?', [id_pedido]);
+        const [rows] = await conn.query('SELECT respondido FROM pedidos WHERE id_pedido = ? AND id_igreja = ?', [id_pedido, id_igreja]);
 
         if (rows.length === 0) {
             throw new Error("Pedido não encontrado");
@@ -43,16 +43,17 @@ async function responderPedido(id_pedido, status_pedido, data_entrega, motivo_re
         let values = [];
 
         if (status_pedido === 'Entregue') {
-            sql = "UPDATE pedidos SET status_pedido = ?, data_entrega = ?, respondido = true WHERE id_pedido = ?";
-            values = [status_pedido, data_entrega, id_pedido];
+            sql = "UPDATE pedidos SET status_pedido = ?, data_entrega = ?, respondido = true WHERE id_pedido = ? AND id_igreja = ? AND respondido = false";
+            values = [status_pedido, data_entrega, id_pedido, id_igreja];
         } else if (status_pedido === 'Recusado') {
-            sql = "UPDATE pedidos SET status_pedido = ?, motivo_recusa = ?, respondido = true WHERE id_pedido = ?";
-            values = [status_pedido, motivo_recusa, id_pedido];
+            sql = "UPDATE pedidos SET status_pedido = ?, motivo_recusa = ?, respondido = true WHERE id_pedido = ? AND id_igreja = ? AND respondido = false";
+            values = [status_pedido, motivo_recusa, id_pedido, id_igreja];
         } else {
             throw new Error("Status de pedido inválido");
         }
 
-        await conn.query(sql, values);
+        const [result] = await conn.query(sql, values);
+        if (result.affectedRows !== 1) throw new Error('Pedido já respondido.');
     } catch (error) {
         throw error;
     } finally {
@@ -71,12 +72,13 @@ async function selectPedidos(id_igreja) {
 };
 
 async function updatePedidos(id_pedido, nome_produto, categoria_produto, quantidade, data_pedido, status_pedido, id_igreja) {
-    const sql = "UPDATE pedidos SET nome_produto = ?, categoria_produto = ?, quantidade = ?, data_pedido = ?, status_pedido = ?, id_igreja = ? WHERE id_pedido = ?";
+    const sql = "UPDATE pedidos SET nome_produto = ?, categoria_produto = ?, quantidade = ?, data_pedido = ?, status_pedido = ?, respondido = CASE WHEN ? IN ('Entregue', 'Recusado') THEN true ELSE respondido END WHERE id_pedido = ? AND id_igreja = ? AND respondido = false";
 
-    const values = [nome_produto, categoria_produto, quantidade, data_pedido, status_pedido, id_igreja, id_pedido];
+    const values = [nome_produto, categoria_produto, quantidade, data_pedido, status_pedido, status_pedido, id_pedido, id_igreja];
 
     const conn = await banco.connect();
-    await conn.query(sql, values);
+    const [result] = await conn.query(sql, values);
+    if (result.affectedRows !== 1) throw new Error('Pedido não encontrado ou já respondido.');
     conn.end();
 };
 
@@ -141,11 +143,12 @@ async function countPedidosTotais(id_igreja) {
 }
 
 
-async function deletePedido(id_pedido) {
-    const sql = "DELETE FROM pedidos WHERE id_pedido = ?";
+async function deletePedido(id_pedido, id_igreja) {
+    const sql = "DELETE FROM pedidos WHERE id_pedido = ? AND id_igreja = ?";
     const conn = await banco.connect();
     try {
-        await conn.query(sql, [id_pedido]);
+        const [result] = await conn.query(sql, [id_pedido, id_igreja]);
+        if (result.affectedRows !== 1) throw new Error('Pedido não encontrado.');
     } catch (error) {
         throw error;
     } finally {

@@ -1,61 +1,37 @@
 import express from 'express';
 import db from '../services/checkServices.js';
-import { generatePassword } from '../helpers/generatePassword.js';
-import nodemailer from 'nodemailer';
-import 'dotenv/config';
+import email from '../services/emailServices.js';
+import { hashPassword } from '../helpers/password.js';
+import { issueResetToken, resetIdentity, verifyResetToken } from '../helpers/resetToken.js';
 
 const routes = express.Router();
 
 routes.post('/', async (request, response) => {
-    try {
-        const { email } = request.body;
-
-        const consult = await db.checkEmail(email);
-
-        if (consult.length > 0) {
-            const newPassword = await generatePassword();
-
-            await db.changePassword(email, newPassword);
-
-            const transporter = nodemailer.createTransport({
-                service: "gmail",              
-                auth: {
-                    user: process.env.EMAIL_CONTATO,
-                    pass: process.env.SENHA_CONTATO,
-                },
-                tls: {
-                    rejectUnauthorized: false,
-                }
-            });
-
-            await transporter.sendMail({
-                from: `Obreiro Digital <${process.env.EMAIL_CONTATO}>`,
-                to: email,
-                subject: "Recuperação de Senha",
-                html: `<h1>Solicitação realizada com sucesso!</h1>
-                <p> Prezado Usuário,</p>
-                <p>Recebemos uma solicitação de recuperação de senha para a sua conta no Obreiro Digital. Como parte do nosso processo de segurança, geramos uma nova senha temporária para você acessar a sua conta.</p>
-                <p>Abaixo, você encontrará as informações necessárias para redefinir a sua senha:</p>
-                <p><strong>Código de Recuperação de Senha: ${newPassword}</strong></p>
-                <p>Para redefinir a sua senha, siga estas etapas simples:</p>
-                <ol>
-                    <li>Insira o seu nome de usuário ou endereço de e-mail associado à sua conta.</li>
-                    <li>Digite o código de recuperação de senha fornecido acima.</li>
-                    <li>Siga as instruções na tela para criar uma nova senha segura.</li>
-                </ol>
-                <p>Lembramos que este código de recuperação de senha é válido por 2 horas a partir do recebimento deste e-mail. Recomendamos que você redefina a sua senha imediatamente.</p>
-                <p>Se você não solicitou esta recuperação de senha ou acredita que isso seja um erro, entre em contato conosco imediatamente para que possamos investigar.</p>
-                <p>Atenciosamente,</p>
-                <p>Obreiro Digital</p> `
-            });
-
-            response.status(200).send("E-mail enviado com sucesso.");
-        } else {
-            response.status(404).send("E-mail inválido");
-        }
-    } catch (erro) {
-        response.status(500).send(`Erro na requisição ${erro}`);
+  try {
+    const address = request.body?.email;
+    if (typeof address !== 'string' || address.length > 254) return response.status(400).json({ message: 'Email inválido.' });
+    const [user] = await db.checkEmail(address);
+    if (user) {
+      const code = issueResetToken(user.id_user, user.senha);
+      await email.sendEmail(user.email, 'Recuperação de senha', `<p>Use este código para redefinir sua senha em até 15 minutos:</p><p>${code}</p>`);
     }
+    return response.status(202).json({ message: 'Se a conta existir, as instruções serão enviadas.' });
+  } catch (error) {
+    console.error('Erro na recuperação:', error);
+    return response.status(202).json({ message: 'Se a conta existir, as instruções serão enviadas.' });
+  }
+});
+
+routes.post('/confirm', async (request, response) => {
+  try {
+    const { token, newPassword } = request.body || {};
+    const id_user = resetIdentity(token);
+    const user = await db.getUserForReset(id_user);
+    if (!user || !verifyResetToken(token, user.id_user, user.senha)) return response.status(400).json({ message: 'Código inválido ou expirado.' });
+    const newHash = await hashPassword(newPassword);
+    if (!await db.resetPasswordOnce(id_user, user.senha, newHash)) return response.status(400).json({ message: 'Código inválido ou expirado.' });
+    return response.status(200).json({ message: 'Senha alterada.' });
+  } catch { return response.status(400).json({ message: 'Código inválido ou expirado.' }); }
 });
 
 export default routes;

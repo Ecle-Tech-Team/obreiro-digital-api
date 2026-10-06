@@ -6,18 +6,18 @@ async function createDepartamentos(nome, birth, data_congresso, id_igreja) {
     const values = [nome, birth, data_congresso, id_igreja];
 
     const conn = await banco.connect();
-    conn.query(sql, values);
-    conn.end();
+    try { await conn.query(sql, values); }
+    finally { await conn.end(); }
 }  
 
 async function updateDepartamento(id_departamento, nome, birth, data_congresso, id_igreja) {
-    const sql = "UPDATE departamentos SET nome = ?, birth = ?, data_congresso = ?, id_igreja = ? WHERE id_departamento = ?";
+    const sql = "UPDATE departamentos SET nome = ?, birth = ?, data_congresso = ? WHERE id_departamento = ? AND id_igreja = ?";
     
-    const values = [nome, birth, data_congresso, id_igreja, id_departamento];
+    const values = [nome, birth, data_congresso, id_departamento, id_igreja];
 
     const conn = await banco.connect();
-    await conn.query(sql, values);
-    conn.end();      
+    try { const [result] = await conn.query(sql, values); if (result.affectedRows !== 1) throw new Error('Departamento não encontrado.'); }
+    finally { await conn.end(); }
 }
 
 async function selectDepartamento(id_igreja) {
