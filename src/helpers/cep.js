@@ -11,7 +11,7 @@ routes.post('/:cep', async (request, response) => {
 
         response.status(201).send(consultCep);
     } catch (error) {
-        response.status(500).send(`Erro na requisição ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 

@@ -22,11 +22,12 @@ async function selectAvisos(id_igreja) {
     };
 };
 
-async function editAviso(id_aviso, titulo, conteudo) {
-    const sql = "UPDATE avisos SET titulo = ?, conteudo = ? WHERE id_aviso = ?";
+async function editAviso(id_aviso, titulo, conteudo, id_igreja) {
+    const sql = "UPDATE avisos SET titulo = ?, conteudo = ? WHERE id_aviso = ? AND id_igreja = ?";
     const conn = await banco.connect();
     try {
-        await conn.query(sql, [titulo, conteudo, id_aviso]);
+        const [result] = await conn.query(sql, [titulo, conteudo, id_aviso, id_igreja]);
+        if (result.affectedRows !== 1) throw new Error('Aviso não encontrado.');
     } finally {
         conn.end();
     };
@@ -62,11 +63,12 @@ async function selectAvisosComMatriz(id_igreja) {
   }
 }
 
-async function deleteAviso(id_aviso) {
-    const sql = "DELETE FROM avisos WHERE id_aviso = ?";
+async function deleteAviso(id_aviso, id_igreja) {
+    const sql = "DELETE FROM avisos WHERE id_aviso = ? AND id_igreja = ?";
     const conn = await banco.connect();
     try {
-        await conn.query(sql, [id_aviso]);
+        const [result] = await conn.query(sql, [id_aviso, id_igreja]);
+        if (result.affectedRows !== 1) throw new Error('Aviso não encontrado.');
     } finally {
         conn.end();
     };

@@ -2,6 +2,7 @@ import express from 'express';
 import db from '../services/eventoServices.js';
 import banco from '../repository/connection.js';
 import verifyJWT from '../middlewares/jwt.js';
+import securityRepository from '../repository/securityRepository.js';
 
 const routes = express.Router();
 
@@ -26,16 +27,16 @@ routes.post('/', async (request, response) => {
 
         response.status(201).send({ message: "Evento cadastrado com sucesso." });
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
 routes.get('/igreja', async (request, response) => {
     try {
-        const igrejas = await db.getIgrejas();
+        const igrejas = await securityRepository.listVisibleChurches(request.user);
         response.status(200).send(igrejas);
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -51,7 +52,7 @@ routes.get('/:id_igreja', async (request, response) => {
             response.status(404).send("Evento não encontrado!");
         }
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -61,11 +62,11 @@ routes.put('/:id_evento', async (request, response) => {
 
         const { nome, data_inicio, horario_inicio, data_fim, horario_fim, local } = request.body;
 
-        await db.updateEvento(id_evento, nome, data_inicio, horario_inicio, data_fim, horario_fim, local);
+        await db.updateEvento(id_evento, nome, data_inicio, horario_inicio, data_fim, horario_fim, local, request.user.id_igreja);
 
         response.status(200).send({ message: "Evento atualizado com sucesso." });
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -77,7 +78,7 @@ routes.get('/count/:id_igreja', async (request, response) => {
 
         response.status(200).json(totalEventos);
     } catch (error) {
-        response.status(500).json(`Erro na requisição! ${error}`);
+        response.status(500).json({ error: 'Erro interno.' });
     }
 });
 
@@ -93,13 +94,11 @@ routes.get('/semana/:id_igreja/:id_matriz', async (request, response) => {
     const semanaFim = endOfWeek(hoje, { weekStartsOn: 1 }); // Domingo
 
     const eventos = await db.selectEventosSemana(id_igreja, id_matriz, semanaInicio, semanaFim);
-    const avisosLocal = await avisoDb.selectAvisos(id_igreja); // assumindo todos avisos da semana já ordenados por data
-    const avisosMatriz = await avisoDb.selectAvisosComMatriz(id_matriz);
-    const avisos = [...avisosMatriz, ...avisosLocal]; // junta os dois
+    const avisos = await avisoDb.selectAvisosComMatriz(id_igreja);
 
     response.status(200).json({ eventos, avisos });
   } catch (error) {
-    response.status(500).send(`Erro ao buscar eventos e avisos da semana: ${error}`);
+    response.status(500).send('Erro interno.');
   }
 });
 
@@ -115,7 +114,7 @@ routes.get('/matriz/:id_igreja', async (request, response) => {
             response.status(404).send("Nenhum evento encontrado!");
         }
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -123,11 +122,11 @@ routes.delete('/:id_evento', async (req, res) => {
     try {
         const { id_evento } = req.params;
 
-        await db.deleteEvento(id_evento);
+        await db.deleteEvento(id_evento, req.user.id_igreja);
         
         res.status(200).send({ message: 'Evento deletado com sucesso' });
     } catch (error) {
-        res.status(500).send(`Erro ao deletar evento: ${error}`);
+        res.status(500).send('Erro interno.');
     }
 });
 

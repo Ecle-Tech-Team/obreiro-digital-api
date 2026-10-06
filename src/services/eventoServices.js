@@ -37,8 +37,8 @@ async function selectEventos(id_igreja) {
 
 async function selectEventosSemana(id_igreja, id_matriz, semanaInicio, semanaFim) {
   const sql = `
-    SELECT * FROM eventos 
-    WHERE (id_igreja = ? OR id_igreja = ?) 
+    SELECT * FROM eventos
+    WHERE (id_igreja = ? OR (id_igreja = ? AND is_global = 1))
       AND data_inicio BETWEEN ? AND ?
     ORDER BY data_inicio ASC
   `;
@@ -61,11 +61,11 @@ async function selectEventosComMatriz(id_igreja) {
     // Agora busca: locais da igreja OU globais da matriz
     const [rows] = await conn.query(
       `
-      SELECT 
+      SELECT
         e.*,
         CASE WHEN e.is_global = 1 THEN 'matriz' ELSE 'local' END AS tipo_evento
       FROM eventos e
-      WHERE e.id_igreja = ? 
+      WHERE e.id_igreja = ?
          OR (e.is_global = 1 AND e.id_matriz = ?)
       ORDER BY e.data_inicio ASC, e.horario_inicio ASC
       `,
@@ -79,21 +79,21 @@ async function selectEventosComMatriz(id_igreja) {
   }
 }
 
-async function updateEvento(id_evento, nome, data_inicio, horario_inicio, data_fim, horario_fim, local) {
-    const sql = "UPDATE eventos SET nome = ?, data_inicio = ?, horario_inicio = ?, data_fim = ?, horario_fim = ?, local = ? WHERE id_evento = ?";
+async function updateEvento(id_evento, nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_igreja) {
+    const sql = "UPDATE eventos SET nome = ?, data_inicio = ?, horario_inicio = ?, data_fim = ?, horario_fim = ?, local = ? WHERE id_evento = ? AND id_igreja = ?";
 
-    const values = [nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_evento];
+    const values = [nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_evento, id_igreja];
 
     const conn = await banco.connect();
-    await conn.query(sql, values);
-    conn.end();
+    try { const [result] = await conn.query(sql, values); if (result.affectedRows !== 1) throw new Error('Evento não encontrado.'); }
+    finally { await conn.end(); }
 }
 
 async function countEventos(id_igreja) {
     const sql = "SELECT COUNT(*) as total FROM eventos WHERE id_igreja = ?";
 
     const conn = await banco.connect();
-    
+
     try {
         const [rows] = await conn.query(sql, [id_igreja]);
         return rows[0].total;
@@ -104,11 +104,12 @@ async function countEventos(id_igreja) {
     }
 }
 
-async function deleteEvento(id_evento) {
-    const sql = "DELETE FROM eventos WHERE id_evento = ?";
+async function deleteEvento(id_evento, id_igreja) {
+    const sql = "DELETE FROM eventos WHERE id_evento = ? AND id_igreja = ?";
     const conn = await banco.connect();
     try {
-        await conn.query(sql, [id_evento]);
+        const [result] = await conn.query(sql, [id_evento, id_igreja]);
+        if (result.affectedRows !== 1) throw new Error('Evento não encontrado.');
     } finally {
         conn.end();
     };

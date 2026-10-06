@@ -2,6 +2,10 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
 
+export const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[character]));
+
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -22,6 +26,7 @@ async function sendEmail(to, subject, html) {
         await transporter.sendMail(mailOptions);
     } catch (error) {
         console.error('Erro ao enviar email:', error);
+        throw error;
     }
 }
 
@@ -35,19 +40,20 @@ async function sendReportEmail(nome_user, email_user, motivo, descricao, dataCri
     });
 
     const mailOptions = {
-        from: email_user,
+        from: process.env.EMAIL_CONTATO,
+        replyTo: email_user,
         to: process.env.EMAIL_CONTATO,
         subject: `Relato de Bug - ${motivo}`,
         html: `
             <div style="font-family: Arial, sans-serif; padding: 20px;">
                 <h2 style="color: #15616D;">Relatório de Bug</h2>
                 <p><strong>Data/Hora:</strong> ${new Date(dataCriacao).toLocaleString('pt-BR')}</p>
-                <p><strong>ID do Usuário:</strong> ${id_user}</p>
-                <p><strong>Nome do Usuário:</strong> ${nome_user}</p>
-                <p><strong>Email do Usuário:</strong> ${email_user}</p>
-                <p><strong>Motivo:</strong> ${motivo}</p>
+                <p><strong>ID do Usuário:</strong> ${escapeHtml(id_user)}</p>
+                <p><strong>Nome do Usuário:</strong> ${escapeHtml(nome_user)}</p>
+                <p><strong>Email do Usuário:</strong> ${escapeHtml(email_user)}</p>
+                <p><strong>Motivo:</strong> ${escapeHtml(motivo)}</p>
                 <p><strong>Descrição:</strong></p>
-                <p>${descricao}</p>
+                <p>${escapeHtml(descricao)}</p>
                 <br/>
                 <p style="font-size: 12px; color: #888;">Este é um email automático, por favor, não responda.</p>
             </div>

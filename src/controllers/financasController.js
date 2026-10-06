@@ -14,7 +14,7 @@ routes.post('/', async (request, response) => {
             financasId,
         });
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -26,7 +26,7 @@ routes.get('/:id_igreja', async (request, response) => {
 
         response.status(200).send(financas);
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error.message}`);
+        response.status(500).send('Erro interno.');
     }
   });
   
@@ -38,7 +38,7 @@ routes.get('/saldo/:id_igreja', async (request, response) => {
 
         response.status(200).send({ saldo });
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error.message}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -48,11 +48,11 @@ routes.put('/:id_financas/:id_igreja', async (request, response) => {
         
         const { tipo, categoria, valor, descricao, data } = request.body;
 
-        await db.updateFinancas(tipo, categoria, valor, descricao, data, id_igreja, id_financas);
+        await db.updateFinancas(id_financas, tipo, categoria, valor, descricao, data, id_igreja);
 
         response.status(200).send({ message: "Movimentação atualizada com sucesso." });
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 

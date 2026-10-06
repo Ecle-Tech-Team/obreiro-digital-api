@@ -19,7 +19,7 @@ routes.get('/:id_employee', async (request, response) =>{
     }
 
     catch (error) {
-        response.status(500).send(`Erro na requisição ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -43,7 +43,7 @@ routes.put('/:id', async (request, response) => {
     }
 
     catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 })
 

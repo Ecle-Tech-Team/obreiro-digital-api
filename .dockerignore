@@ -1,8 +1,11 @@
-node_modules
-npm-debug.log*
-.env
-.env.*
 .git
 .gitignore
 Dockerfile*
 docker-compose*
+node_modules
+.env
+.env.*
+test
+coverage
+npm-debug.log*
+*.md

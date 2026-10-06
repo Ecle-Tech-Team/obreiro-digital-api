@@ -2,6 +2,7 @@ import express from 'express';
 import db from '../services/departamentosServices.js';
 import banco from '../repository/connection.js';
 import verifyJWT from '../middlewares/jwt.js';
+import securityRepository from '../repository/securityRepository.js';
 
 const routes = express.Router();
 
@@ -18,7 +19,7 @@ routes.post('/', async (request, response) => {
         response.status(201).send({message: "Cadastro realizado com sucesso."})
               
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -32,7 +33,7 @@ routes.put('/:id_departamento/:id_igreja', async (request, response) => {
 
         response.status(200).send({ message: "Departamento atualizado com sucesso." });
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -48,16 +49,16 @@ routes.get('/', async (request, response) => {
             response.status(404).send("Departamento não encontrado!");
         }
     } catch (error){
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 })
 
 routes.get('/igreja', async (request, response) => {
     try {
-        const igrejas = await db.getIgrejas();
+        const igrejas = await securityRepository.listVisibleChurches(request.user);
         response.status(200).send(igrejas);
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -73,7 +74,7 @@ routes.get('/:id_igreja', async (request, response) => {
             response.status(404).send("Departamento não encontrado!");
         }
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 

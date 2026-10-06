@@ -2,35 +2,28 @@ import banco from '../repository/connection.js';
 
 async function checkEmail(email) {
 
-  const sql = "SELECT email FROM user WHERE email = ?";
+  const sql = "SELECT id_user, email, senha FROM user WHERE email = ?";
 
   const conn = await banco.connect();
-  const [rows] = await conn.query(sql, email);
-    conn.end();
-  
-  return rows;
+  try { const [rows] = await conn.query(sql, [email]); return rows; }
+  finally { await conn.end(); }
 }
 
-async function checkCode(email, codigo) {
-    const sql = "SELECT * FROM user WHERE email = ? and senha = ?";
 
-    const conn = await banco.connect();
-    const [rows] = await conn.query(sql, email, codigo);
-    conn.end();
-
-    return rows;
-} 
-
-async function changePassword(email, newPassword) {
-    const sql = "UPDATE user SET senha = ? WHERE email = ?";
-
-    const values = [email, newPassword];
-
+async function getUserForReset(id_user) {
   const conn = await banco.connect();
-  await conn.query(sql, values);
-    conn.end();
-
-    return;
+  try {
+    const [[row]] = await conn.query('SELECT id_user, email, senha FROM user WHERE id_user = ?', [id_user]);
+    return row;
+  } finally { await conn.end(); }
 }
 
-export default {checkEmail, changePassword, checkCode}
+async function resetPasswordOnce(id_user, oldHash, newHash) {
+  const conn = await banco.connect();
+  try {
+    const [result] = await conn.query('UPDATE user SET senha = ? WHERE id_user = ? AND senha = ?', [newHash, id_user, oldHash]);
+    return result.affectedRows === 1;
+  } finally { await conn.end(); }
+}
+
+export default { checkEmail, getUserForReset, resetPasswordOnce }

@@ -7,15 +7,15 @@ async function createMembro(cod_membro, nome, numero, birth, novo_convertido, id
     const values = [cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja]; 
 
     const conn = await banco.connect();
-    conn.query(sql, values);
-    conn.end();      
+    try { await conn.query(sql, values); }
+    finally { await conn.end(); }
 }
 
-async function selectDepartamentos() {
-    const sql = "SELECT * FROM departamentos"
+async function selectDepartamentos(id_igreja) {
+    const sql = "SELECT * FROM departamentos WHERE id_igreja = ?"
 
     const conn = await banco.connect();
-    const [rows] = await conn.query(sql);
+    const [rows] = await conn.query(sql, [id_igreja]);
     conn.end();
 
     return rows;
@@ -37,12 +37,12 @@ async function countMembros(id_igreja) {
 }
 
 async function updateMembro(id_membro, cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja) {
-    const sql = "UPDATE membro SET cod_membro = ?, nome = ?, numero = ?, birth = ?, novo_convertido = ?, id_departamento = ?, id_igreja = ? WHERE id_membro = ?";    
-    const values = [cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja, id_membro];
+    const sql = "UPDATE membro SET cod_membro = ?, nome = ?, numero = ?, birth = ?, novo_convertido = ?, id_departamento = ? WHERE id_membro = ? AND id_igreja = ?";
+    const values = [cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_membro, id_igreja];
 
     const conn = await banco.connect();
-    await conn.query(sql, values);
-    conn.end();      
+    try { const [result] = await conn.query(sql, values); if (result.affectedRows !== 1) throw new Error('Membro não encontrado.'); }
+    finally { await conn.end(); }
 }
 
 async function selectMembro(id_igreja) {
@@ -115,11 +115,12 @@ async function selectMembrosPorMatriz(id_matriz) {
   }
 }
 
-async function deleteMembro(id_membro) {
-    const sql = "DELETE FROM membro WHERE id_membro = ?";
+async function deleteMembro(id_membro, id_igreja) {
+    const sql = "DELETE FROM membro WHERE id_membro = ? AND id_igreja = ?";
     const conn = await banco.connect();
     try {
-        await conn.query(sql, [id_membro]);
+        const [result] = await conn.query(sql, [id_membro, id_igreja]);
+        if (result.affectedRows !== 1) throw new Error('Membro não encontrado.');
     } catch (error) {
         throw error;
     } finally {

@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../services/pedidoServices.js';
 import verifyJWT from '../middlewares/jwt.js';
+import securityRepository from '../repository/securityRepository.js';
 
 const routes = express.Router();
 
@@ -17,16 +18,16 @@ routes.post('/', async (request, response) => {
 
         response.status(201).send({ message: "Pedido realizado com sucesso." });
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
 routes.get('/igreja', async (request, response) => {
     try {
-        const igrejas = await db.getIgrejas();
+        const igrejas = await securityRepository.listVisibleChurches(request.user);
         response.status(200).send(igrejas);
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -42,8 +43,17 @@ routes.get('/:id_igreja', async (request, response) => {
             response.status(404).send("Pedido não encontrado!");
         }
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
+});
+
+routes.put('/:id_pedido/responder', async (request, response) => {
+    try {
+        const { id_pedido } = request.params;
+        const { status_pedido, data_entrega, motivo_recusa } = request.body;
+        await db.responderPedido(id_pedido, status_pedido, data_entrega, motivo_recusa, request.user.id_igreja);
+        response.status(200).send({ message: "Resposta do pedido registrada com sucesso." });
+    } catch (error) { response.status(400).send({ message: 'Pedido não pôde ser respondido.' }); }
 });
 
 routes.put('/:id_pedido/:id_igreja', async (request, response) => {
@@ -55,20 +65,7 @@ routes.put('/:id_pedido/:id_igreja', async (request, response) => {
 
         response.status(200).send({ message: "Pedido atualizado com sucesso." });
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
-    }
-});
-
-routes.put('/:id_pedido/responder', async (request, response) => {
-    try {
-        const { id_pedido } = request.params;
-        const { status_pedido, data_entrega, motivo_recusa } = request.body;
-
-        await db.responderPedido(id_pedido, status_pedido, data_entrega, motivo_recusa);
-
-        response.status(200).send({ message: "Resposta do pedido registrada com sucesso." });
-    } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -128,12 +125,12 @@ routes.delete('/:id_pedido', async (request, response) => {
     try {
         const { id_pedido } = request.params;
 
-        await db.deletePedido(id_pedido);
+        await db.deletePedido(id_pedido, request.user.id_igreja);
 
         response.status(200).send({ message: "Pedido removido com sucesso." });
 
     } catch (error) {        
-        response.status(500).send(`Erro ao deletar Pedido: ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 

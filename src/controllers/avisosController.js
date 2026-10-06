@@ -25,7 +25,7 @@ routes.post('/', async (req, res) => {
         const idAviso = await db.createAviso(titulo, conteudo, id_igreja, is_global, id_matriz);
         res.status(201).send({ message: 'Aviso criado com sucesso', id_aviso: idAviso });
     } catch (error) {
-        res.status(500).send(`Erro ao criar aviso: ${error}`);
+        res.status(500).send('Erro interno.');
     }
 });
 
@@ -37,7 +37,7 @@ routes.get('/:id_igreja', async (req, res) => {
         
         res.status(201).send(avisos);
     } catch (error) {
-        res.status(500).send(`Erro ao buscar avisos: ${error}`);
+        res.status(500).send('Erro interno.');
     }
 });
 
@@ -53,7 +53,7 @@ routes.get('/matriz/:id_igreja', async (request, response) => {
             response.status(404).send("Nenhum aviso encontrado!");
         }
     } catch (error) {
-        response.status(500).send(`Erro na requisição! ${error}`);
+        response.status(500).send('Erro interno.');
     }
 });
 
@@ -61,10 +61,10 @@ routes.put('/:id_aviso', async (req, res) => {
     try {
         const { id_aviso } = req.params;
         const { titulo, conteudo } = req.body;
-        await db.editAviso(id_aviso, titulo, conteudo);
+        await db.editAviso(id_aviso, titulo, conteudo, req.user.id_igreja);
         res.status(200).send({ message: 'Aviso atualizado com sucesso' });
     } catch (error) {
-        res.status(500).send(`Erro ao atualizar aviso: ${error}`);
+        res.status(500).send('Erro interno.');
     }
 });
 
@@ -72,11 +72,11 @@ routes.delete('/:id_aviso', async (req, res) => {
     try {
         const { id_aviso } = req.params;
 
-        await db.deleteAviso(id_aviso);
+        await db.deleteAviso(id_aviso, req.user.id_igreja);
         
         res.status(200).send({ message: 'Aviso deletado com sucesso' });
     } catch (error) {
-        res.status(500).send(`Erro ao deletar aviso: ${error}`);
+        res.status(500).send('Erro interno.');
     }
 });
 
