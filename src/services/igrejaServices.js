@@ -59,7 +59,7 @@ async function getIgrejas() {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -73,7 +73,7 @@ async function getIgrejaById(id_igreja) {
   } catch (error) {
     throw error;
   } finally {
-    conn.end();
+    await conn.end();
   }
 }
 
@@ -86,7 +86,7 @@ async function countIgrejasSubordinadas(id_matriz) {
   } catch (error) {
     throw error;
   } finally {
-    conn.end();
+    await conn.end();
   }
 }
 

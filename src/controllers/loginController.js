@@ -18,7 +18,8 @@ routes.post('/', async (request, response) => {
                 nome: user.nome, 
                 cargo: user.cargo,
                 id_matriz: user.id_matriz,
-                auth_tag: user.auth_tag
+                auth_tag: user.auth_tag,
+                session_version: user.session_version
         });
 
             response.cookie('od_session', token, {
@@ -54,7 +55,14 @@ routes.post('/', async (request, response) => {
     }
 });
 
-routes.post('/logout', (_request, response) => {
+routes.post('/logout', async (request, response) => {
+    try {
+        if (!await db.revokeSessions(request.user.id_user, request.user.session_version)) {
+            return response.status(401).json({ message: 'Sessão inválida.' });
+        }
+    } catch {
+        return response.status(500).json({ message: 'Erro interno.' });
+    }
     response.clearCookie('od_session', {
         httpOnly: true,
         sameSite: 'lax',

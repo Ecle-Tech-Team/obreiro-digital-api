@@ -6,8 +6,11 @@ async function createEvento(nome, data_inicio, horario_inicio, data_fim, horario
     const values = [nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_igreja, is_global, id_matriz];
 
     const conn = await banco.connect();
+  try {
     await conn.query(sql, values);
-    conn.end();
+
+
+  } finally { await conn.end(); }
 }
 
 async function getIgrejas() {
@@ -21,7 +24,7 @@ async function getIgrejas() {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -29,10 +32,13 @@ async function selectEventos(id_igreja) {
     const sql = "SELECT * FROM eventos WHERE id_igreja = ?";
 
     const conn = await banco.connect();
+  try {
     const [rows] = await conn.query(sql, [id_igreja]);
-    conn.end();
+
 
     return rows;
+
+  } finally { await conn.end(); }
 }
 
 async function selectEventosSemana(id_igreja, id_matriz, semanaInicio, semanaFim) {
@@ -43,9 +49,12 @@ async function selectEventosSemana(id_igreja, id_matriz, semanaInicio, semanaFim
     ORDER BY data_inicio ASC
   `;
   const conn = await banco.connect();
+  try {
   const [rows] = await conn.query(sql, [id_igreja, id_matriz, semanaInicio, semanaFim]);
-  conn.end();
+
   return rows;
+
+  } finally { await conn.end(); }
 }
 
 async function selectEventosComMatriz(id_igreja) {
@@ -75,7 +84,7 @@ async function selectEventosComMatriz(id_igreja) {
 
     return rows;
   } finally {
-    conn.end();
+    await conn.end();
   }
 }
 
@@ -100,7 +109,7 @@ async function countEventos(id_igreja) {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -111,7 +120,7 @@ async function deleteEvento(id_evento, id_igreja) {
         const [result] = await conn.query(sql, [id_evento, id_igreja]);
         if (result.affectedRows !== 1) throw new Error('Evento não encontrado.');
     } finally {
-        conn.end();
+        await conn.end();
     };
 };
 

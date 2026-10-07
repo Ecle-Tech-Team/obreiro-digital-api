@@ -5,11 +5,13 @@ import verifyJWT from './middlewares/jwt.js';
 import { createSecurityGate } from './middlewares/security.js';
 import securityRepository from './repository/securityRepository.js';
 import { createRateLimiter } from './middlewares/rateLimit.js';
+import { incrementRateLimit } from './repository/rateLimitStore.js';
 import { tokenSecret } from './helpers/tokenSecret.js';
 
 tokenSecret();
 
 const api = express();
+if (process.env.TRUST_PROXY_CIDRS) api.set('trust proxy', process.env.TRUST_PROXY_CIDRS.split(',').map(value => value.trim()));
 
 api.use(express.json());
 
@@ -22,12 +24,12 @@ api.use(cors({ credentials: true, origin(origin, callback) {
 } }));
 
 const limits = {
-    login: createRateLimiter({ max: 10, windowMs: 15 * 60_000 }),
-    recuperarLogin: createRateLimiter({ max: 5, windowMs: 60 * 60_000 }),
-    cadastro: createRateLimiter({ max: 10, windowMs: 60 * 60_000 }),
-    igreja: createRateLimiter({ max: 5, windowMs: 60 * 60_000 }),
-    cep: createRateLimiter({ max: 30, windowMs: 60 * 60_000 }),
-    report: createRateLimiter({ max: 5, windowMs: 60 * 60_000 }),
+    login: createRateLimiter({ max: 10, windowMs: 15 * 60_000, store: incrementRateLimit }),
+    recuperarLogin: createRateLimiter({ max: 5, windowMs: 60 * 60_000, store: incrementRateLimit }),
+    cadastro: createRateLimiter({ max: 10, windowMs: 60 * 60_000, store: incrementRateLimit }),
+    igreja: createRateLimiter({ max: 5, windowMs: 60 * 60_000, store: incrementRateLimit }),
+    cep: createRateLimiter({ max: 30, windowMs: 60 * 60_000, store: incrementRateLimit }),
+    report: createRateLimiter({ max: 5, windowMs: 60 * 60_000, store: incrementRateLimit }),
 };
 api.use((request, response, next) => {
     if (request.method !== 'POST') return next();

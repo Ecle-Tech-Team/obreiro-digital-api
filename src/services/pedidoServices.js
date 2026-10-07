@@ -2,12 +2,15 @@ import banco from '../repository/connection.js';
 
 async function createPedido(nome_produto, categoria_produto, quantidade, data_pedido, id_igreja) {
     const sql = "INSERT INTO pedidos(nome_produto, categoria_produto, quantidade, data_pedido, respondido, id_igreja) VALUES (?, ?, ?, ?, false, ?)";
-    
+
     const values = [nome_produto, categoria_produto, quantidade, data_pedido, id_igreja];
 
     const conn = await banco.connect();
+  try {
     await conn.query(sql, values);
-    conn.end();      
+
+
+  } finally { await conn.end(); }
 };
 
 async function getIgrejas() {
@@ -21,14 +24,14 @@ async function getIgrejas() {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
 async function responderPedido(id_pedido, status_pedido, data_entrega, motivo_recusa, id_igreja) {
     const conn = await banco.connect();
 
-    try {        
+    try {
         const [rows] = await conn.query('SELECT respondido FROM pedidos WHERE id_pedido = ? AND id_igreja = ?', [id_pedido, id_igreja]);
 
         if (rows.length === 0) {
@@ -57,7 +60,7 @@ async function responderPedido(id_pedido, status_pedido, data_entrega, motivo_re
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 };
 
@@ -65,10 +68,13 @@ async function selectPedidos(id_igreja) {
     const sql = "SELECT * FROM pedidos WHERE id_igreja = ?";
 
     const conn = await banco.connect();
+  try {
     const [rows] = await conn.query(sql, [id_igreja]);
-    conn.end();
+
 
     return rows;
+
+  } finally { await conn.end(); }
 };
 
 async function updatePedidos(id_pedido, nome_produto, categoria_produto, quantidade, data_pedido, status_pedido, id_igreja) {
@@ -77,23 +83,26 @@ async function updatePedidos(id_pedido, nome_produto, categoria_produto, quantid
     const values = [nome_produto, categoria_produto, quantidade, data_pedido, status_pedido, status_pedido, id_pedido, id_igreja];
 
     const conn = await banco.connect();
+  try {
     const [result] = await conn.query(sql, values);
     if (result.affectedRows !== 1) throw new Error('Pedido não encontrado ou já respondido.');
-    conn.end();
+
+
+  } finally { await conn.end(); }
 };
 
 async function countPedidosEntregues(id_igreja) {
     const sql = "SELECT COUNT(*) as total FROM pedidos WHERE id_igreja = ? AND status_pedido = 'Entregue'";
 
     const conn = await banco.connect();
-    
+
     try {
         const [rows] = await conn.query(sql, [id_igreja]);
         return rows[0].total;
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 };
 
@@ -101,14 +110,14 @@ async function countPedidosEmAndamento(id_igreja) {
     const sql = "SELECT COUNT(*) as total FROM pedidos WHERE id_igreja = ? AND status_pedido = 'Em Andamento'";
 
     const conn = await banco.connect();
-    
+
     try {
         const [rows] = await conn.query(sql, [id_igreja]);
         return rows[0].total;
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 };
 
@@ -116,14 +125,14 @@ async function countPedidosRecusados(id_igreja) {
     const sql = "SELECT COUNT(*) as total FROM pedidos WHERE id_igreja = ? AND status_pedido = 'Recusado'";
 
     const conn = await banco.connect();
-    
+
     try {
         const [rows] = await conn.query(sql, [id_igreja]);
         return rows[0].total;
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 };
 
@@ -138,7 +147,7 @@ async function countPedidosTotais(id_igreja) {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -152,7 +161,7 @@ async function deletePedido(id_pedido, id_igreja) {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 

@@ -60,7 +60,7 @@ async function updateUserPartial(id_user, userData, id_igreja) {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -75,7 +75,7 @@ async function selectUserOnly(id_user) {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -83,10 +83,13 @@ async function selectUserIdIgreja(id_igreja) {
     let sql = 'SELECT id_user, cod_membro, nome, email, birth, cargo, id_igreja FROM user WHERE id_igreja = ?';
 
     const conn = await banco.connect();
+  try {
     const [row] = await conn.query(sql, id_igreja);
-    conn.end();
+
 
     return row;
+
+  } finally { await conn.end(); }
 }
 
 async function selectUser(id_user) {
@@ -100,7 +103,7 @@ async function selectUser(id_user) {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -115,7 +118,7 @@ async function getIgrejas() {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -130,7 +133,7 @@ async function getUserById(id_user) {
         console.error('Erro ao buscar usuário:', error);
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -150,7 +153,7 @@ async function selectUsersPorMatriz(id_matriz) {
   } catch (error) {
     throw error;
   } finally {
-    conn.end();
+    await conn.end();
   }
 }
 
@@ -168,7 +171,7 @@ async function deleteUser(id_user, id_igreja) {
         await conn.rollback();
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 

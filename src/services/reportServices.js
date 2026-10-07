@@ -24,7 +24,7 @@ async function createReport(id_user, motivo, descricao, nome_user, email_user) {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 

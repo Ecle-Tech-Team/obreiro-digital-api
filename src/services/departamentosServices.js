@@ -43,7 +43,7 @@ async function selectDepartamento(id_igreja) {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -58,7 +58,7 @@ async function getIgrejas() {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -78,7 +78,7 @@ async function selectDepartamentoOnly(id_departamento) {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -98,7 +98,7 @@ async function selectDepartamentosPorMatriz(id_matriz) {
   } catch (error) {
     throw error;
   } finally {
-    conn.end();
+    await conn.end();
   }
 }
 

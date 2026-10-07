@@ -1,16 +1,18 @@
 import banco from '../repository/connection.js';
 
+export class FinancialValidationError extends Error {}
+
 function cents(value) {
   const text = String(value);
-  if (!/^(?:0|[1-9]\d{0,7})(?:\.\d{1,2})?$/.test(text)) throw new Error('Valor financeiro inválido.');
+  if (!/^(?:0|[1-9]\d{0,7})(?:\.\d{1,2})?$/.test(text)) throw new FinancialValidationError('Valor financeiro inválido.');
   const [integer, fractional = ''] = text.split('.');
   const result = BigInt(integer) * 100n + BigInt(fractional.padEnd(2, '0') || '0');
-  if (result <= 0n) throw new Error('Valor financeiro inválido.');
+  if (result <= 0n) throw new FinancialValidationError('Valor financeiro inválido.');
   return result;
 }
 
 const money = value => `${value < 0n ? '-' : ''}${(value < 0n ? -value : value) / 100n}.${String((value < 0n ? -value : value) % 100n).padStart(2, '0')}`;
-const signed = (tipo, value) => tipo === 'Entrada' ? value : tipo === 'Saída' ? -value : (() => { throw new Error('Tipo financeiro inválido.'); })();
+const signed = (tipo, value) => tipo === 'Entrada' ? value : tipo === 'Saída' ? -value : (() => { throw new FinancialValidationError('Tipo financeiro inválido.'); })();
 
 export function createFinancialLedger(database) {
   async function transaction(action) {

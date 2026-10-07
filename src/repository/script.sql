@@ -2,6 +2,13 @@ CREATE DATABASE IF NOT EXISTS obreiro_digital;
 USE obreiro_digital;
 SET NAMES utf8mb4;
 
+CREATE TABLE rate_limits (
+    key_hash CHAR(64) PRIMARY KEY,
+    attempts INT UNSIGNED NOT NULL,
+    expires_at BIGINT UNSIGNED NOT NULL,
+    INDEX idx_rate_limits_expires (expires_at)
+);
+
 -- IGREJA COM SUPORTE À MATRIZ
 CREATE TABLE igreja (
     id_igreja INT AUTO_INCREMENT PRIMARY KEY,
@@ -25,6 +32,7 @@ CREATE TABLE user (
     nome VARCHAR(150) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
+    session_version INT UNSIGNED NOT NULL DEFAULT 0,
     birth DATE NOT NULL,
     cargo ENUM('Pastor', 'Obreiro', 'Pastor Matriz', 'Obreiro Matriz') NOT NULL,
     id_igreja INT,
@@ -93,7 +101,8 @@ CREATE TABLE saldo (
     id_saldo INT AUTO_INCREMENT PRIMARY KEY,
     saldo_atual DECIMAL(10, 2) NOT NULL,
     data_atualizacao DATE NOT NULL,
-    id_igreja INT,
+    id_igreja INT NOT NULL,
+    UNIQUE KEY uq_saldo_igreja (id_igreja),
     FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja)
 );
 

@@ -1,6 +1,5 @@
 import express from 'express';
 import db from '../services/membrosServices.js';
-import banco from '../repository/connection.js';
 import verifyJWT from '../middlewares/jwt.js';
 import securityRepository from '../repository/securityRepository.js';
 
@@ -106,14 +105,7 @@ routes.get('/matriz/:id_igreja', async (request, response) => {
     try {
     const { id_igreja } = request.params;
 
-   const conn = await banco.connect();
-    const [igrejaRows] = await conn.query(
-      "SELECT id_igreja, id_matriz FROM igreja WHERE id_igreja = ?",
-      [id_igreja]
-    );
-    conn.end();
-
-    const igreja = igrejaRows[0];
+    const igreja = await securityRepository.getChurch(id_igreja);
 
     if (!igreja) {
       return response.status(404).json({ error: "Igreja não encontrada" });

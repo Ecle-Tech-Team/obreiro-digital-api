@@ -19,6 +19,7 @@
     "test": "node --test test/*.test.js"
   },
   "overrides": {
-    "jws": "3.2.3"
+    "jws": "3.2.3",
+    "proxy-addr": "2.0.8"
   }
 }

@@ -5,7 +5,7 @@ import { hashPassword, verifyPassword } from '../helpers/password.js';
 async function login(email, senha){
 
     const sql = `SELECT  
-        u.id_user, u.email, u.nome, u.cargo, u.id_igreja, i.id_matriz, u.senha
+        u.id_user, u.email, u.nome, u.cargo, u.id_igreja, i.id_matriz, u.senha, u.session_version
         FROM user u
         JOIN igreja i ON u.id_igreja = i.id_igreja
         WHERE u.email = ?`;
@@ -30,4 +30,12 @@ async function login(email, senha){
     return user;
 }
 
-export default {login};
+async function revokeSessions(id_user, version) {
+    const conn = await banco.connect();
+    try {
+        const [result] = await conn.query('UPDATE user SET session_version = session_version + 1 WHERE id_user = ? AND session_version = ?', [id_user, version]);
+        return result.affectedRows === 1;
+    } finally { await conn.end(); }
+}
+
+export default {login, revokeSessions};
