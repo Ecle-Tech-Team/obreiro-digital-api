@@ -6,13 +6,23 @@ export const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, chara
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
 }[character]));
 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_CONTATO,
-        pass: process.env.SENHA_CONTATO
+export function createTransportOptions(env = process.env) {
+    if (env.SMTP_HOST) {
+        return {
+            host: env.SMTP_HOST,
+            port: Number(env.SMTP_PORT || 587),
+            secure: false,
+            requireTLS: true,
+            auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD },
+        };
     }
-});
+    return {
+        service: 'gmail',
+        auth: { user: env.EMAIL_CONTATO, pass: env.SENHA_CONTATO },
+    };
+}
+
+const transporter = nodemailer.createTransport(createTransportOptions());
 
 async function sendEmail(to, subject, html) {
     const mailOptions = {
@@ -31,14 +41,6 @@ async function sendEmail(to, subject, html) {
 }
 
 async function sendReportEmail(nome_user, email_user, motivo, descricao, dataCriacao, id_user) {
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.EMAIL_CONTATO, 
-            pass: process.env.SENHA_CONTATO  
-        }
-    });
-
     const mailOptions = {
         from: process.env.EMAIL_CONTATO,
         replyTo: email_user,

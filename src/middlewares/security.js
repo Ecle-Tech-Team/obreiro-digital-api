@@ -15,7 +15,7 @@ export function createSecurityGate(repository) {
     try {
       const parts = request.path.split('/').filter(Boolean);
       const [module, first, second] = parts;
-      if (!module || module === 'login' || module === 'cep' || module === 'recuperarLogin') return next();
+      if (!module || (module === 'login' && first !== 'logout') || module === 'cep' || module === 'recuperarLogin') return next();
       if (module === 'igreja' && request.method === 'POST' && !request.user) return next();
       if (module === 'cadastro' && request.method === 'POST' && !request.user) {
         let churchId;
@@ -31,10 +31,11 @@ export function createSecurityGate(repository) {
       }
       if (!request.user?.id_user) return response.status(401).json({ message: 'Autenticação necessária.' });
       const user = await repository.getUser(request.user.id_user);
-      if (!user || Number(user.id_igreja) !== Number(request.user.id_igreja) || (user.auth_tag && user.auth_tag !== request.user.auth_tag)) {
+      if (!user || Number(user.id_igreja) !== Number(request.user.id_igreja) || (user.auth_tag && user.auth_tag !== request.user.auth_tag) || Number(user.session_version || 0) !== Number(request.user.session_version || 0)) {
         return response.status(401).json({ message: 'Sessão inválida.' });
       }
       request.user = { ...request.user, ...user };
+      if (module === 'login' && first === 'logout') return next();
       const own = Number(user.id_igreja);
       const allowedChurch = async (id, allowBranch = false) => {
         if (!isId(id)) return false;

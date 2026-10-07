@@ -7,7 +7,7 @@ async function createAviso(titulo, conteudo, id_igreja, is_global, id_matriz) {
         const [result] = await conn.query(sql, [titulo, conteudo, id_igreja, is_global, id_matriz]);
         return result.insertId;
     } finally {
-        conn.end();
+        await conn.end();
     };
 };
 
@@ -18,7 +18,7 @@ async function selectAvisos(id_igreja) {
         const [rows] = await conn.query(sql, [id_igreja]);
         return rows;
     } finally {
-        conn.end();
+        await conn.end();
     };
 };
 
@@ -29,7 +29,7 @@ async function editAviso(id_aviso, titulo, conteudo, id_igreja) {
         const [result] = await conn.query(sql, [titulo, conteudo, id_aviso, id_igreja]);
         if (result.affectedRows !== 1) throw new Error('Aviso não encontrado.');
     } finally {
-        conn.end();
+        await conn.end();
     };
 };
 
@@ -59,7 +59,7 @@ async function selectAvisosComMatriz(id_igreja) {
 
     return rows;
   } finally {
-    conn.end();
+    await conn.end();
   }
 }
 
@@ -70,7 +70,7 @@ async function deleteAviso(id_aviso, id_igreja) {
         const [result] = await conn.query(sql, [id_aviso, id_igreja]);
         if (result.affectedRows !== 1) throw new Error('Aviso não encontrado.');
     } finally {
-        conn.end();
+        await conn.end();
     };
 };
 

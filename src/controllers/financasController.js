@@ -1,5 +1,6 @@
 import express from 'express';
 import db from '../services/financasServices.js';
+import { FinancialValidationError } from '../services/financasServices.js';
 
 const routes = express.Router();
 
@@ -14,6 +15,7 @@ routes.post('/', async (request, response) => {
             financasId,
         });
     } catch (error) {
+        if (error instanceof FinancialValidationError) return response.status(400).json({ message: error.message });
         response.status(500).send('Erro interno.');
     }
 });
@@ -52,6 +54,7 @@ routes.put('/:id_financas/:id_igreja', async (request, response) => {
 
         response.status(200).send({ message: "Movimentação atualizada com sucesso." });
     } catch (error) {
+        if (error instanceof FinancialValidationError) return response.status(400).json({ message: error.message });
         response.status(500).send('Erro interno.');
     }
 });

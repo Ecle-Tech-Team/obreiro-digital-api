@@ -2,9 +2,9 @@ import banco from '../repository/connection.js';
 
 async function createMembro(cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja) {
 
-    const sql = "INSERT INTO membro(cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja) VALUES(?, ?, ?, ?, ?, ?, ?)";    
+    const sql = "INSERT INTO membro(cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja) VALUES(?, ?, ?, ?, ?, ?, ?)";
 
-    const values = [cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja]; 
+    const values = [cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja];
 
     const conn = await banco.connect();
     try { await conn.query(sql, values); }
@@ -15,24 +15,27 @@ async function selectDepartamentos(id_igreja) {
     const sql = "SELECT * FROM departamentos WHERE id_igreja = ?"
 
     const conn = await banco.connect();
+  try {
     const [rows] = await conn.query(sql, [id_igreja]);
-    conn.end();
+
 
     return rows;
+
+  } finally { await conn.end(); }
 }
 
 async function countMembros(id_igreja) {
     const sql = "SELECT COUNT(*) as total FROM membro WHERE id_igreja = ?";
 
     const conn = await banco.connect();
-    
+
     try {
         const [rows] = await conn.query(sql, [id_igreja]);
         return rows[0].total;
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -47,7 +50,7 @@ async function updateMembro(id_membro, cod_membro, nome, numero, birth, novo_con
 
 async function selectMembro(id_igreja) {
     const sql = "SELECT * FROM membro WHERE id_igreja = ?";
-    
+
     const conn = await banco.connect();
     try {
         const [rows] = await conn.query(sql, [id_igreja]);
@@ -56,7 +59,7 @@ async function selectMembro(id_igreja) {
         console.error('Erro na query:', error);
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -71,7 +74,7 @@ async function getIgrejas() {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
@@ -91,14 +94,14 @@ async function selectMembroOnly(id_membro) {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 
 async function selectMembrosPorMatriz(id_matriz) {
   const sql = `
-   SELECT * FROM membro 
-    WHERE id_igreja = ? 
+   SELECT * FROM membro
+    WHERE id_igreja = ?
     OR id_igreja IN (
       SELECT id_igreja FROM igreja WHERE id_matriz = ?
     )
@@ -111,7 +114,7 @@ async function selectMembrosPorMatriz(id_matriz) {
   } catch (error) {
     throw error;
   } finally {
-    conn.end();
+    await conn.end();
   }
 }
 
@@ -124,7 +127,7 @@ async function deleteMembro(id_membro, id_igreja) {
     } catch (error) {
         throw error;
     } finally {
-        conn.end();
+        await conn.end();
     }
 }
 

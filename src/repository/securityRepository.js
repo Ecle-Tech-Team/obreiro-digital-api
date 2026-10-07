@@ -13,7 +13,7 @@ async function one(sql, values) {
 }
 
 async function getUser(id) {
-  const row = await one('SELECT id_user, id_igreja, cargo, email, nome, senha FROM user WHERE id_user = ?', [id]);
+  const row = await one('SELECT id_user, id_igreja, cargo, email, nome, senha, session_version FROM user WHERE id_user = ?', [id]);
   if (!row) return undefined;
   const auth_tag = createHash('sha256').update(row.senha).digest('hex');
   delete row.senha;

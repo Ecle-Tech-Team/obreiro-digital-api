@@ -30,6 +30,7 @@ function verifyJWT(request, response, next) {
       id_igreja: decoded.infoUser.id_igreja,
       email: decoded.infoUser.email,
       auth_tag: decoded.infoUser.auth_tag,
+      session_version: decoded.infoUser.session_version,
       cargo: undefined
     };
     

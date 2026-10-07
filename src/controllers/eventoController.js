@@ -1,6 +1,5 @@
 import express from 'express';
 import db from '../services/eventoServices.js';
-import banco from '../repository/connection.js';
 import verifyJWT from '../middlewares/jwt.js';
 import securityRepository from '../repository/securityRepository.js';
 
@@ -17,10 +16,8 @@ routes.post('/', async (request, response) => {
          // Se for global, pegamos a matriz dessa igreja
         let id_matriz = null;
         if (is_global) {
-            const conn = await banco.connect();
-            const [igrejaInfo] = await conn.query("SELECT id_matriz FROM igreja WHERE id_igreja = ?", [id_igreja]);
-            conn.end();
-            id_matriz = igrejaInfo[0]?.id_matriz || id_igreja; // Se a própria é matriz, usa ela mesma
+            const igrejaInfo = await securityRepository.getChurch(id_igreja);
+            id_matriz = igrejaInfo?.id_matriz || id_igreja; // Se a própria é matriz, usa ela mesma
         }
 
         await db.createEvento(nome, data_inicio, horario_inicio, data_fim, horario_fim, local, id_igreja, is_global, id_matriz);

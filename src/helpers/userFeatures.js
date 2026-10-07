@@ -7,7 +7,8 @@ function generateToken(userData){
       id_login: userData.id_user,
       email: userData.email,
       id_igreja: userData.id_igreja,
-      auth_tag: userData.auth_tag
+      auth_tag: userData.auth_tag,
+      session_version: Number(userData.session_version || 0)
     } 
   }, tokenSecret(), { algorithm: 'HS256', expiresIn: 60 * 60 * 5 });
 }
