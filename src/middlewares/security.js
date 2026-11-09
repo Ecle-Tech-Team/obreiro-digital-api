@@ -74,7 +74,10 @@ export function createSecurityGate(repository) {
           if (!isId(first)) return deny();
           const target = await repository.getUser(first);
           if (!target || Number(target.id_igreja) !== own) return deny();
-          if (request.method === 'DELETE' && Number(first) !== Number(user.id_user) && !pastor(user)) return deny();
+          // Só o próprio usuário ou um pastor altera/remove a conta; contas Matriz só por usuários Matriz.
+          const self = Number(first) === Number(user.id_user);
+          if (!self && !pastor(user)) return deny();
+          if (!self && target.cargo?.includes('Matriz') && !matriz(user)) return deny();
           if (request.method === 'PUT' && request.body.id_igreja !== undefined) return deny();
           if (request.method === 'PUT' && request.body.cargo !== undefined && (!pastor(user) || (request.body.cargo.includes('Matriz') && !matriz(user)))) return deny();
           return next();

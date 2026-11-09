@@ -67,6 +67,20 @@ test('cadastro público não pode criar cargo em igreja existente', async () => 
   assert.deepEqual(await runRequest('DELETE', '/cadastro/2', 1), { status: 403, writes: 0 });
 });
 
+test('conta de usuário só pode ser alterada pelo próprio usuário ou por pastor', async () => {
+  // Obreiro (3) não pode trocar senha/email do pastor (1) da mesma igreja
+  assert.deepEqual(await runRequest('PUT', '/cadastro/1', 3, { senha: 'nova-senha-123' }), { status: 403, writes: 0 });
+  assert.deepEqual(await runRequest('PUT', '/cadastro/1', 3, { email: 'x@example.invalid' }), { status: 403, writes: 0 });
+  assert.deepEqual(await runRequest('DELETE', '/cadastro/1', 3), { status: 403, writes: 0 });
+  // O próprio usuário e o pastor da igreja podem
+  assert.deepEqual(await runRequest('PUT', '/cadastro/3', 3, { senha: 'nova-senha-123' }), { status: 200, writes: 1 });
+  assert.deepEqual(await runRequest('PUT', '/cadastro/3', 1, { nome: 'Novo nome' }), { status: 200, writes: 1 });
+  // Pastor de outra igreja não pode
+  assert.deepEqual(await runRequest('PUT', '/cadastro/3', 2, { nome: 'Novo nome' }), { status: 403, writes: 0 });
+  // Obreiro Matriz (4) não pode alterar o Pastor Matriz (5)
+  assert.deepEqual(await runRequest('PUT', '/cadastro/5', 4, { senha: 'nova-senha-123' }), { status: 403, writes: 0 });
+});
+
 test('cadastro inicial exige prova emitida para a própria igreja', async () => {
   process.env.JWT_SECRET = randomBytes(48).toString('hex');
   const registration_token = generateRegistrationToken(30);
