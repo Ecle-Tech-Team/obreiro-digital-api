@@ -2,6 +2,8 @@ import banco from '../repository/connection.js';
 import { createHash } from 'node:crypto';
 import { hashPassword, verifyPassword } from '../helpers/password.js';
 
+const DUMMY_HASH = `$scrypt$${'0'.repeat(32)}$${'0'.repeat(128)}`;
+
 async function login(email, senha){
 
     const sql = `SELECT  
@@ -17,7 +19,12 @@ async function login(email, senha){
     try { [row] = await conn.query(sql, dataLogin); }
     finally { await conn.end(); }
     const user = row[0];
-    if (!user || !await verifyPassword(senha, user.senha)) return undefined;
+    if (!user) {
+        // Mesmo custo de scrypt para email inexistente, para não revelar quais emails têm conta.
+        await verifyPassword(String(senha ?? ''), DUMMY_HASH);
+        return undefined;
+    }
+    if (!await verifyPassword(senha, user.senha)) return undefined;
     if (!user.senha.startsWith('$scrypt$')) {
         const upgraded = await hashPassword(senha, { allowShort: true });
         const updateConn = await banco.connect();

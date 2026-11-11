@@ -13,7 +13,18 @@ tokenSecret();
 const api = express();
 if (process.env.TRUST_PROXY_CIDRS) api.set('trust proxy', process.env.TRUST_PROXY_CIDRS.split(',').map(value => value.trim()));
 
-api.use(express.json());
+api.disable('x-powered-by');
+api.use((_request, response, next) => {
+    response.set({
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'Referrer-Policy': 'no-referrer',
+        'Cache-Control': 'no-store',
+    });
+    next();
+});
+
+api.use(express.json({ limit: '100kb' }));
 
 const origins = (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',').map(origin => origin.trim());
 api.use(cors({ credentials: true, origin(origin, callback) {
@@ -52,6 +63,8 @@ api.use('/', routes);
 
 api.use((error, _request, response, _next) => {
     if (error.status === 403) return response.status(403).json({ message: 'Origem não permitida.' });
+    if (error.type === 'entity.parse.failed') return response.status(400).json({ message: 'JSON inválido.' });
+    if (error.type === 'entity.too.large') return response.status(413).json({ message: 'Requisição muito grande.' });
     console.error('Erro na API:', error);
     response.status(500).json({ message: 'Erro interno.' });
 });

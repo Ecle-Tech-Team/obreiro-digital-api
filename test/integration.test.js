@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip: process.env.SECURITY_INTEGRATION !== '1' }, async () => {
   dotenv.config({ path: '../.env' });
   process.env.DB_HOST = '127.0.0.1';
-  process.env.DB_PORT = '3307';
+  process.env.DB_PORT = process.env.INTEGRATION_DB_PORT || '3307';
   const { default: routes } = await import('../src/routes.js');
   const { default: verifyJWT } = await import('../src/middlewares/jwt.js');
   const { createSecurityGate } = await import('../src/middlewares/security.js');
@@ -17,7 +17,7 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
   const { hashPassword } = await import('../src/helpers/password.js');
   const { migratePasswords } = await import('../src/scripts/migratePasswords.js');
   const { default: applicationDatabase } = await import('../src/repository/connection.js');
-  const db = await mysql.createConnection({ host: process.env.DB_HOST, port: 3307, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME });
+  const db = await mysql.createConnection({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT), user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME });
   const [[reportColumn]] = await db.query("SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'bug_reports' AND COLUMN_NAME = 'id_user'", [process.env.DB_NAME]);
   assert.equal(reportColumn?.IS_NULLABLE, 'YES', 'Banco de teste deve conter a migration 001.');
   const app = express(); app.use(express.json());
@@ -27,6 +27,7 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
   const churchIds = []; const userIds = []; const departmentIds = []; const memberIds = [];
+  const sessionToken = setCookie => /od_session=([^;]+)/.exec(setCookie || '')?.[1];
   const call = async (method, path, token, body) => {
     const response = await fetch(base + path, { method, headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
     const text = await response.text();
@@ -65,8 +66,8 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
     const loginB = await call('POST', '/login', null, { email: userIds[1].email, senha: 'senha-de-teste-123' });
     assert.equal(loginA.status, 200); assert.equal(loginB.status, 200);
     assert.match(loginA.setCookie || '', /od_session=.*HttpOnly.*SameSite=Lax/i);
-    let tokenA = loginA.body.token;
-    const tokenB = loginB.body.token;
+    let tokenA = sessionToken(loginA.setCookie);
+    const tokenB = sessionToken(loginB.setCookie);
     const cookieA = loginA.setCookie.split(';')[0];
     assert.equal((await fetch(base + `/financas/${a}`, { headers: { Cookie: cookieA } })).status, 200);
     const logout = await fetch(base + '/login/logout', { method: 'POST', headers: { Cookie: cookieA, Origin: 'http://localhost:3000' } });
@@ -76,7 +77,7 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
     assert.equal((await call('GET', `/financas/${a}`, tokenA)).status, 401);
     const reloginA = await call('POST', '/login', null, { email: userIds[0].email, senha: 'senha-de-teste-123' });
     assert.equal(reloginA.status, 200);
-    tokenA = reloginA.body.token;
+    tokenA = sessionToken(reloginA.setCookie);
     assert.equal((await call('GET', `/financas/${a}`, tokenA)).status, 200);
     assert.equal((await call('GET', `/financas/${b}`, tokenA)).status, 403);
     assert.equal((await call('GET', `/financas/${b}`, tokenB)).status, 200);
@@ -86,6 +87,10 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
     const ownUsers = await call('GET', '/cadastro/cadastro', tokenA);
     assert.equal(ownUsers.status, 200);
     assert(ownUsers.body.every(row => row.id_igreja === a && !('senha' in row)));
+    assert.equal(loginA.body.token, undefined, 'login não deve expor o token no corpo');
+    assert.equal((await call('PUT', `/cadastro/${userIds[0].id}`, tokenA, { senha: 'outra-senha-123' })).status, 403);
+    assert.equal((await call('PUT', `/cadastro/${userIds[0].id}`, tokenA, { senha: 'outra-senha-123', senha_atual: 'errada' })).status, 403);
+    assert.equal((await call('PUT', `/cadastro/${userIds[0].id}`, tokenA, { email: 'novo@example.invalid' })).status, 403);
     const create = await call('POST', '/financas', tokenA, { tipo: 'Entrada', categoria: 'Oferta Simples', valor: '10.25', descricao: 'teste', data: '2026-10-05', id_igreja: a });
     assert.equal(create.status, 201, String(create.body));
     const invalidAmount = await call('POST', '/financas', tokenA, { tipo: 'Entrada', categoria: 'Oferta Simples', valor: '-1.00', descricao: 'teste', data: '2026-10-05', id_igreja: a });
@@ -137,6 +142,6 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
       await db.query('DELETE FROM user WHERE id_igreja = ?', [churchId]);
       await db.query('DELETE FROM igreja WHERE id_igreja = ?', [churchId]);
     }
-    await db.end(); await new Promise(resolve => server.close(resolve));
+    await db.end(); await applicationDatabase.close(); await new Promise(resolve => server.close(resolve));
   }
 });

@@ -38,8 +38,7 @@ routes.post('/', async (request, response) => {
                     cargo: user.cargo,
                     id_igreja: user.id_igreja,
                     id_matriz: user.id_matriz
-                },
-                token
+                }
             });
 
         }
