@@ -24,6 +24,8 @@ export async function migratePasswords(database) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const migrated = await migratePasswords(banco);
-  console.log(`Contas migradas: ${migrated}`);
+  try {
+    const migrated = await migratePasswords(banco);
+    console.log(`Contas migradas: ${migrated}`);
+  } finally { await banco.close(); }
 }

@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip: process.env.SECURITY_INTEGRATION !== '1' }, async () => {
   dotenv.config({ path: '../.env' });
   process.env.DB_HOST = '127.0.0.1';
-  process.env.DB_PORT = '3307';
+  process.env.DB_PORT = process.env.INTEGRATION_DB_PORT || '3307';
   const { default: routes } = await import('../src/routes.js');
   const { default: verifyJWT } = await import('../src/middlewares/jwt.js');
   const { createSecurityGate } = await import('../src/middlewares/security.js');
@@ -17,7 +17,7 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
   const { hashPassword } = await import('../src/helpers/password.js');
   const { migratePasswords } = await import('../src/scripts/migratePasswords.js');
   const { default: applicationDatabase } = await import('../src/repository/connection.js');
-  const db = await mysql.createConnection({ host: process.env.DB_HOST, port: 3307, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME });
+  const db = await mysql.createConnection({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT), user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME });
   const [[reportColumn]] = await db.query("SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'bug_reports' AND COLUMN_NAME = 'id_user'", [process.env.DB_NAME]);
   assert.equal(reportColumn?.IS_NULLABLE, 'YES', 'Banco de teste deve conter a migration 001.');
   const app = express(); app.use(express.json());
@@ -142,6 +142,6 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
       await db.query('DELETE FROM user WHERE id_igreja = ?', [churchId]);
       await db.query('DELETE FROM igreja WHERE id_igreja = ?', [churchId]);
     }
-    await db.end(); await new Promise(resolve => server.close(resolve));
+    await db.end(); await applicationDatabase.close(); await new Promise(resolve => server.close(resolve));
   }
 });

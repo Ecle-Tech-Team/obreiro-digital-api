@@ -23,13 +23,4 @@ function verifyRegistrationToken(token) {
   return Number(claims.id_igreja);
 }
 
-function getIdIgrejaFromToken(token) {
-  try {
-    const decoded = jwt.verify(token, tokenSecret(), { algorithms: ['HS256'] });
-    return decoded.infoUser.id_igreja;
-  } catch (error) {
-    return null;
-  }
-}
-
-export {generateToken, getIdIgrejaFromToken, generateRegistrationToken, verifyRegistrationToken};
+export { generateToken, generateRegistrationToken, verifyRegistrationToken };
