@@ -135,7 +135,11 @@ export function createSecurityGate(repository) {
         }
         if (request.method === 'PUT' || request.method === 'DELETE') return record(recordTables[module][0], first);
       }
-      return next();
+      // Rotas que usam apenas a identidade do próprio usuário (request.user).
+      if (module === 'report' && request.method === 'POST' && parts.length === 1) return next();
+      if (module === 'cadastro' && request.method === 'GET' && first === 'cadastro' && (parts.length === 2 || (parts.length === 3 && second === 'igreja'))) return next();
+      // Negar por padrão: rota nova precisa de regra explícita aqui.
+      return deny();
     } catch (error) {
       return next(error);
     }

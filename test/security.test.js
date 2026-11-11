@@ -67,6 +67,15 @@ test('cadastro público não pode criar cargo em igreja existente', async () => 
   assert.deepEqual(await runRequest('DELETE', '/cadastro/2', 1), { status: 403, writes: 0 });
 });
 
+test('rotas sem regra explícita são negadas por padrão', async () => {
+  assert.deepEqual(await runRequest('GET', '/rota-inexistente', 1), { status: 403, writes: 0 });
+  assert.deepEqual(await runRequest('DELETE', '/financas/101', 1), { status: 403, writes: 0 });
+  assert.deepEqual(await runRequest('GET', '/report', 1), { status: 403, writes: 0 });
+  assert.deepEqual(await runRequest('POST', '/report', 3, { motivo: 'x', descricao: 'y' }), { status: 200, writes: 1 });
+  assert.deepEqual(await runRequest('GET', '/cadastro/cadastro', 3), { status: 200, writes: 1 });
+  assert.deepEqual(await runRequest('GET', '/cadastro/cadastro/igreja', 3), { status: 200, writes: 1 });
+});
+
 test('conta de usuário só pode ser alterada pelo próprio usuário ou por pastor', async () => {
   // Obreiro (3) não pode trocar senha/email do pastor (1) da mesma igreja
   assert.deepEqual(await runRequest('PUT', '/cadastro/1', 3, { senha: 'nova-senha-123' }), { status: 403, writes: 0 });

@@ -3,6 +3,7 @@ import db from '../services/cadastroService.js';
 import verifyJWT from '../middlewares/jwt.js';
 import sendEmail from '../services/emailServices.js';
 import securityRepository from '../repository/securityRepository.js';
+import { verifyPassword } from '../helpers/password.js';
 
 const routes = express.Router();
 
@@ -27,15 +28,21 @@ routes.put('/:id_user', verifyJWT, async (request, response) => {
     try {
         const { id_user } = request.params;
 
-        const { email, senha, ...userData } = request.body;
+        const { email, senha, senha_atual, ...userData } = request.body;
 
-        const user = await db.getUserById(id_user);
+        const user = await db.selectUserOnly(id_user);
 
         if (!user) {
             return response.status(404).send("Usuário não encontrado.");
         }
 
         const oldEmail = user.email;
+
+        // Trocar a própria senha ou o próprio email exige a senha atual.
+        const self = Number(id_user) === Number(request.user.id_user);
+        if (self && (senha || (email && email !== oldEmail)) && !await verifyPassword(senha_atual, user.senha)) {
+            return response.status(403).json({ message: 'Senha atual incorreta.' });
+        }
 
         const userDataToUpdate = { ...userData };
         if (email) userDataToUpdate.email = email;

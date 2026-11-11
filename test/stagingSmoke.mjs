@@ -24,7 +24,9 @@ const login = async label => request('/login', { method: 'POST', origin: goodOri
 try {
   const loginA = await login('A'), loginB = await login('B');
   assert.equal(loginA.status, 200); assert.equal(loginB.status, 200);
-  const tokenA = loginA.data.token, tokenB = loginB.data.token;
+  const sessionToken = response => /od_session=([^;]+)/.exec(response.headers.get('set-cookie') || '')?.[1];
+  const tokenA = sessionToken(loginA), tokenB = sessionToken(loginB);
+  assert.equal(loginA.data.token, undefined, 'login não deve expor o token no corpo');
   const cookie = loginA.headers.get('set-cookie');
   for (const marker of ['HttpOnly', 'Secure', 'SameSite=Lax', 'Path=/']) assert.ok(cookie.includes(marker), marker);
   assert.equal((await request(`/financas/${a.id_igreja}`, { cookie: cookie.split(';')[0], origin: goodOrigin })).status, 200);
