@@ -7,6 +7,7 @@ import securityRepository from './repository/securityRepository.js';
 import { createRateLimiter } from './middlewares/rateLimit.js';
 import { incrementRateLimit } from './repository/rateLimitStore.js';
 import { tokenSecret } from './helpers/tokenSecret.js';
+import database from './repository/connection.js';
 
 tokenSecret();
 
@@ -22,6 +23,17 @@ api.use((_request, response, next) => {
         'Cache-Control': 'no-store',
     });
     next();
+});
+
+// Usado pelo healthcheck do Docker: responde 200 só se o banco responde.
+api.get('/health', async (_request, response) => {
+    try {
+        const conn = await database.connect();
+        try { await conn.query('SELECT 1'); } finally { await conn.end(); }
+        return response.status(200).json({ status: 'ok' });
+    } catch {
+        return response.status(503).json({ status: 'unavailable' });
+    }
 });
 
 api.use(express.json({ limit: '100kb' }));
@@ -69,6 +81,19 @@ api.use((error, _request, response, _next) => {
     response.status(500).json({ message: 'Erro interno.' });
 });
 
-api.listen (Number(process.env.API_PORT || 3333), () => {
-    console.log('Servidor em produção...');
+const port = Number(process.env.API_PORT || 3333);
+const server = api.listen(port, () => {
+    console.log(`API ouvindo na porta ${port}`);
 });
+
+// docker stop envia SIGTERM: termina as requisições em andamento e fecha o pool.
+for (const signal of ['SIGTERM', 'SIGINT']) {
+    process.once(signal, () => {
+        console.log(`${signal} recebido, encerrando...`);
+        server.close(async () => {
+            await database.close().catch(() => {});
+            process.exit(0);
+        });
+        setTimeout(() => process.exit(1), 8000).unref();
+    });
+}
