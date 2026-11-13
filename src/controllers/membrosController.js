@@ -2,6 +2,7 @@ import express from 'express';
 import db from '../services/membrosServices.js';
 import verifyJWT from '../middlewares/jwt.js';
 import securityRepository from '../repository/securityRepository.js';
+import { normalizePhone, PhoneValidationError } from '../helpers/phone.js';
 
 const routes = express.Router();
 
@@ -13,11 +14,12 @@ routes.post('/', async (request, response) => {
         
         const id_igreja = request.user.id_igreja;
         
-        await db.createMembro(cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja);
+        await db.createMembro(cod_membro, nome, normalizePhone(numero), birth, novo_convertido, id_departamento, id_igreja);
         
         response.status(201).json({ message: "Membro cadastrado com sucesso" });
               
     } catch (error) {
+        if (error instanceof PhoneValidationError) return response.status(400).json({ message: error.message });
         response.status(500).json({ error: 'Erro interno.' });
     }
 });
@@ -40,10 +42,11 @@ routes.put('/:id_membro/:id_igreja', async (request, response) => {
         
         const { cod_membro, nome, numero, birth, novo_convertido, id_departamento } = request.body;
 
-        await db.updateMembro(id_membro, cod_membro, nome, numero, birth, novo_convertido, id_departamento, id_igreja);
+        await db.updateMembro(id_membro, cod_membro, nome, normalizePhone(numero), birth, novo_convertido, id_departamento, id_igreja);
 
         response.status(200).send({ message: "Membro atualizado com sucesso." });
     } catch (error) {
+        if (error instanceof PhoneValidationError) return response.status(400).json({ message: error.message });
         response.status(500).send('Erro interno.');
     }
 });

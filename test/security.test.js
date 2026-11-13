@@ -16,7 +16,7 @@ const users = {
 const owners = {
   financas: { 101: 10, 201: 20 }, membro: { 101: 10, 201: 20, 301: 31 },
   departamentos: { 101: 10, 201: 20 }, estoque: { 101: 10, 201: 20 },
-  pedidos: { 101: 10, 201: 20 }, eventos: { 101: 10, 201: 20 }, avisos: { 101: 10, 201: 20 },
+  pedidos: { 101: 10, 201: 20, 301: 31 }, eventos: { 101: 10, 201: 20 }, avisos: { 101: 10, 201: 20 },
 };
 
 async function runRequest(method, path, userId, body = {}) {
@@ -131,4 +131,19 @@ test('estoque, pedidos, eventos, avisos e visitantes isolam igrejas A e B', asyn
 test('catálogo local de departamentos continua acessível somente com JWT', async () => {
   assert.deepEqual(await runRequest('GET', '/departamento', 1), { status: 200, writes: 1 });
   assert.deepEqual(await runRequest('GET', '/departamento'), { status: 401, writes: 0 });
+});
+
+test('pedido é respondido pela igreja responsável (matriz) e nunca pela filial que pediu', async () => {
+  // Igreja 10 é filial (matriz 1): o pastor da filial não aprova o próprio pedido.
+  assert.deepEqual(await runRequest('PUT', '/pedido/101/responder', 1, { status_pedido: 'Entregue' }), { status: 403, writes: 0 });
+  // Igreja 20 não tem matriz: o próprio pastor responde.
+  assert.deepEqual(await runRequest('PUT', '/pedido/201/responder', 2, { status_pedido: 'Entregue' }), { status: 200, writes: 1 });
+  // Igreja 31 é filial da matriz 30: Pastor Matriz e Obreiro Matriz respondem; obreiro comum e outra igreja não.
+  assert.deepEqual(await runRequest('PUT', '/pedido/301/responder', 5, { status_pedido: 'Entregue' }), { status: 200, writes: 1 });
+  assert.deepEqual(await runRequest('PUT', '/pedido/301/responder', 4, { status_pedido: 'Entregue' }), { status: 200, writes: 1 });
+  assert.deepEqual(await runRequest('PUT', '/pedido/301/responder', 2, { status_pedido: 'Entregue' }), { status: 403, writes: 0 });
+  assert.deepEqual(await runRequest('PUT', '/pedido/101/responder', 3, { status_pedido: 'Entregue' }), { status: 403, writes: 0 });
+  // Lista de pedidos a responder: só pastores e usuários Matriz.
+  assert.deepEqual(await runRequest('GET', '/pedido/recebidos', 5), { status: 200, writes: 1 });
+  assert.deepEqual(await runRequest('GET', '/pedido/recebidos', 3), { status: 403, writes: 0 });
 });

@@ -4,6 +4,7 @@ import verifyJWT from '../middlewares/jwt.js';
 import sendEmail from '../services/emailServices.js';
 import securityRepository from '../repository/securityRepository.js';
 import { verifyPassword } from '../helpers/password.js';
+import { LastPastorError } from '../helpers/pastorGuard.js';
 
 const routes = express.Router();
 
@@ -91,6 +92,7 @@ routes.put('/:id_user', verifyJWT, async (request, response) => {
 
         response.status(200).send({ message: "Usuário atualizado com sucesso." });
     } catch (error) {
+        if (error instanceof LastPastorError) return response.status(409).json({ message: error.message });
         response.status(500).send('Erro interno.');
     }
 });
@@ -180,6 +182,7 @@ routes.delete('/:id_user', verifyJWT, async (request, response) => {
         response.status(200).send({ message: "Usuário removido com sucesso." });
 
     } catch (error) {
+        if (error instanceof LastPastorError) return response.status(409).json({ message: error.message });
         response.status(500).send('Erro interno.');
     }
 });

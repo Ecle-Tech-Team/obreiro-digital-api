@@ -1,13 +1,17 @@
 import express from 'express';
 import banco from '../repository/connection.js';
+import { assertAnotherPastor, isPastorRole, LastPastorError } from '../helpers/pastorGuard.js';
 
 export function createMovementService(database) {
   async function move(table, column, id, destination, actorChurch) {
     const conn = await database.connect();
     try {
       await conn.beginTransaction();
-      const [[record]] = await conn.query(`SELECT id_igreja FROM ${table} WHERE ${column} = ? FOR UPDATE`, [id]);
+      const [[record]] = await conn.query(`SELECT id_igreja${table === 'user' ? ', cargo' : ''} FROM ${table} WHERE ${column} = ? FOR UPDATE`, [id]);
       if (!record) throw new Error('Registro não encontrado.');
+      if (table === 'user' && Number(record.id_igreja) !== Number(destination) && isPastorRole(record.cargo)) {
+        await assertAnotherPastor(conn, record.id_igreja, id);
+      }
       const [churches] = await conn.query('SELECT id_igreja, id_matriz FROM igreja WHERE id_igreja IN (?, ?) FOR UPDATE', [record.id_igreja, destination]);
       const own = id => Number(id) === Number(actorChurch);
       const valid = id => churches.some(church => Number(church.id_igreja) === Number(id) && (own(id) || own(church.id_matriz)));
@@ -36,7 +40,10 @@ routes.put('/cadastro', async (req, res, next) => {
   try {
     await movement.moveUser(req.body.id_user, req.body.nova_igreja_id, req.user.id_igreja);
     res.status(200).send({ message: 'Usuário movido com sucesso' });
-  } catch (error) { next(error); }
+  } catch (error) {
+    if (error instanceof LastPastorError) return res.status(409).json({ message: error.message });
+    next(error);
+  }
 });
 
 routes.put('/membro', async (req, res, next) => {

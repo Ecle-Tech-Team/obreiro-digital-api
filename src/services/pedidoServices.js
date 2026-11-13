@@ -1,5 +1,9 @@
 import banco from '../repository/connection.js';
 
+export class PedidoError extends Error {
+    constructor(message, status = 400) { super(message); this.status = status; }
+}
+
 async function createPedido(nome_produto, categoria_produto, quantidade, data_pedido, id_igreja) {
     const sql = "INSERT INTO pedidos(nome_produto, categoria_produto, quantidade, data_pedido, respondido, id_igreja) VALUES (?, ?, ?, ?, false, ?)";
 
@@ -28,35 +32,28 @@ async function getIgrejas() {
     }
 }
 
-async function responderPedido(id_pedido, status_pedido, data_entrega, motivo_recusa, id_igreja) {
+// A autorização (igreja responsável e cargo) é feita no middleware de segurança.
+async function responderPedido(id_pedido, status_pedido, data_entrega, motivo_recusa) {
+    let sql;
+    let values;
+    if (status_pedido === 'Entregue') {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(data_entrega || ''))) throw new PedidoError('Informe a data de entrega.');
+        sql = "UPDATE pedidos SET status_pedido = 'Entregue', data_entrega = ?, motivo_recusa = NULL, respondido = true WHERE id_pedido = ? AND respondido = false";
+        values = [data_entrega, id_pedido];
+    } else if (status_pedido === 'Recusado') {
+        const motivo = String(motivo_recusa || '').trim();
+        if (!motivo) throw new PedidoError('Informe o motivo da recusa.');
+        if (motivo.length > 1000) throw new PedidoError('Motivo da recusa muito longo.');
+        sql = "UPDATE pedidos SET status_pedido = 'Recusado', motivo_recusa = ?, data_entrega = NULL, respondido = true WHERE id_pedido = ? AND respondido = false";
+        values = [motivo, id_pedido];
+    } else {
+        throw new PedidoError('Resposta inválida: use Entregue ou Recusado.');
+    }
+
     const conn = await banco.connect();
-
     try {
-        const [rows] = await conn.query('SELECT respondido FROM pedidos WHERE id_pedido = ? AND id_igreja = ?', [id_pedido, id_igreja]);
-
-        if (rows.length === 0) {
-            throw new Error("Pedido não encontrado");
-        }
-
-        if (rows[0].respondido) {
-            throw new Error("Este pedido já foi respondido e não pode ser atualizado.");
-        }
-
-        let sql = "";
-        let values = [];
-
-        if (status_pedido === 'Entregue') {
-            sql = "UPDATE pedidos SET status_pedido = ?, data_entrega = ?, respondido = true WHERE id_pedido = ? AND id_igreja = ? AND respondido = false";
-            values = [status_pedido, data_entrega, id_pedido, id_igreja];
-        } else if (status_pedido === 'Recusado') {
-            sql = "UPDATE pedidos SET status_pedido = ?, motivo_recusa = ?, respondido = true WHERE id_pedido = ? AND id_igreja = ? AND respondido = false";
-            values = [status_pedido, motivo_recusa, id_pedido, id_igreja];
-        } else {
-            throw new Error("Status de pedido inválido");
-        }
-
         const [result] = await conn.query(sql, values);
-        if (result.affectedRows !== 1) throw new Error('Pedido já respondido.');
+        if (result.affectedRows !== 1) throw new PedidoError('Este pedido já foi respondido.', 409);
     } catch (error) {
         throw error;
     } finally {
@@ -77,15 +74,16 @@ async function selectPedidos(id_igreja) {
   } finally { await conn.end(); }
 };
 
-async function updatePedidos(id_pedido, nome_produto, categoria_produto, quantidade, data_pedido, status_pedido, id_igreja) {
-    const sql = "UPDATE pedidos SET nome_produto = ?, categoria_produto = ?, quantidade = ?, data_pedido = ?, status_pedido = ?, respondido = CASE WHEN ? IN ('Entregue', 'Recusado') THEN true ELSE respondido END WHERE id_pedido = ? AND id_igreja = ? AND respondido = false";
+// Quem pediu só altera os dados do pedido; o status é definido por quem responde.
+async function updatePedidos(id_pedido, nome_produto, categoria_produto, quantidade, data_pedido, id_igreja) {
+    const sql = "UPDATE pedidos SET nome_produto = ?, categoria_produto = ?, quantidade = ?, data_pedido = ? WHERE id_pedido = ? AND id_igreja = ? AND respondido = false";
 
-    const values = [nome_produto, categoria_produto, quantidade, data_pedido, status_pedido, status_pedido, id_pedido, id_igreja];
+    const values = [nome_produto, categoria_produto, quantidade, data_pedido, id_pedido, id_igreja];
 
     const conn = await banco.connect();
   try {
     const [result] = await conn.query(sql, values);
-    if (result.affectedRows !== 1) throw new Error('Pedido não encontrado ou já respondido.');
+    if (result.affectedRows !== 1) throw new PedidoError('Pedido já respondido não pode ser editado.', 409);
 
 
   } finally { await conn.end(); }
@@ -166,4 +164,17 @@ async function deletePedido(id_pedido, id_igreja) {
 }
 
 
-export default { createPedido, getIgrejas, responderPedido, selectPedidos, updatePedidos, countPedidosEntregues, countPedidosEmAndamento, countPedidosRecusados, countPedidosTotais, deletePedido };
+// Pedidos que a igreja do usuário deve responder: os próprios (se ela não tiver matriz) e os das filiais.
+async function selectPedidosRecebidos(id_igreja) {
+    const sql = `SELECT p.*, i.nome AS nome_igreja FROM pedidos p
+        JOIN igreja i ON i.id_igreja = p.id_igreja
+        WHERE COALESCE(i.id_matriz, i.id_igreja) = ?
+        ORDER BY p.respondido ASC, p.data_pedido DESC, p.id_pedido DESC`;
+    const conn = await banco.connect();
+    try {
+        const [rows] = await conn.query(sql, [id_igreja]);
+        return rows;
+    } finally { await conn.end(); }
+}
+
+export default { selectPedidosRecebidos, createPedido, getIgrejas, responderPedido, selectPedidos, updatePedidos, countPedidosEntregues, countPedidosEmAndamento, countPedidosRecusados, countPedidosTotais, deletePedido };
