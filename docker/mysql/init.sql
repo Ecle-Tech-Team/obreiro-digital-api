@@ -57,7 +57,7 @@ CREATE TABLE membro (
     id_membro INT AUTO_INCREMENT PRIMARY KEY,
     cod_membro VARCHAR(16) NOT NULL,
     nome VARCHAR(150) NOT NULL,
-    numero INT(25),
+    numero VARCHAR(20),
     birth DATE NOT NULL,
     novo_convertido ENUM('Sim', 'Não') NOT NULL,
     id_departamento INT,
@@ -183,4 +183,5 @@ INSERT INTO schema_migrations (name) VALUES
     ('002_backfill_missing_balances.sql'),
     ('003_session_version.sql'),
     ('004_rate_limits.sql'),
-    ('005_unique_balance_church.sql');
+    ('005_unique_balance_church.sql'),
+    ('006_member_phone_text.sql');

@@ -110,6 +110,17 @@ export function createSecurityGate(repository) {
         return sameChurch(first);
       }
       if (module === 'perfil') return deny(); // endpoint legado sem identidade equivalente
+      if (module === 'pedido') {
+        // Pedidos são respondidos pela igreja responsável: a matriz, ou a própria igreja se ela não tiver matriz.
+        const canRespond = pastor(user) || matriz(user);
+        if (request.method === 'GET' && first === 'recebidos' && parts.length === 2) return canRespond ? next() : deny();
+        if (request.method === 'PUT' && second === 'responder' && parts.length === 3) {
+          if (!canRespond || !isId(first)) return deny();
+          const owner = await repository.getOwner('pedidos', first);
+          const church = owner != null ? await repository.getChurch(owner) : null;
+          return church && Number(church.id_matriz ?? church.id_igreja) === own ? next() : deny();
+        }
+      }
       if (module === 'departamento' || module === 'membro' || module === 'estoque' || module === 'pedido' || module === 'evento' || module === 'avisos') {
         if (module === 'departamento' && request.method === 'GET' && parts.length === 1) return next();
         if ((module === 'evento' || module === 'avisos') && request.method === 'POST' && request.body.is_global && user.cargo !== 'Pastor Matriz') return deny();

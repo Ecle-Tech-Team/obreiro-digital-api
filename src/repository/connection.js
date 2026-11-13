@@ -17,6 +17,8 @@ function getPool() {
         connectionLimit: Number(process.env.DB_POOL_SIZE || 10),
         waitForConnections: true,
         queueLimit: 100,
+        // Colunas DATE saem como 'AAAA-MM-DD' (sem hora nem fuso), para o dia nunca mudar no caminho.
+        dateStrings: ['DATE'],
     });
     return pool;
 }

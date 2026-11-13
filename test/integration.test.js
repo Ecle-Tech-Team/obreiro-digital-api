@@ -91,6 +91,16 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
     assert.equal((await call('PUT', `/cadastro/${userIds[0].id}`, tokenA, { senha: 'outra-senha-123' })).status, 403);
     assert.equal((await call('PUT', `/cadastro/${userIds[0].id}`, tokenA, { senha: 'outra-senha-123', senha_atual: 'errada' })).status, 403);
     assert.equal((await call('PUT', `/cadastro/${userIds[0].id}`, tokenA, { email: 'novo@example.invalid' })).status, 403);
+    // Único pastor da igreja A não pode se excluir nem se rebaixar.
+    const lastDelete = await call('DELETE', `/cadastro/${userIds[0].id}`, tokenA);
+    assert.equal(lastDelete.status, 409); assert.match(lastDelete.body.message, /pelo menos um pastor/);
+    assert.equal((await call('PUT', `/cadastro/${userIds[0].id}`, tokenA, { cargo: 'Obreiro' })).status, 409);
+    // Celular com DDD e formatado é aceito e guardado só com dígitos; número inválido recebe 400.
+    const memberWithPhone = await call('POST', '/membro', tokenA, { cod_membro: 'tel', nome: 'Membro Celular', numero: '(11) 98765-4321', birth: '2000-01-01', novo_convertido: 'Não' });
+    assert.equal(memberWithPhone.status, 201, JSON.stringify(memberWithPhone.body));
+    const [[savedPhone]] = await db.query("SELECT numero FROM membro WHERE id_igreja = ? AND cod_membro = 'tel'", [a]);
+    assert.equal(savedPhone.numero, '11987654321');
+    assert.equal((await call('POST', '/membro', tokenA, { cod_membro: 'tel2', nome: 'Membro Errado', numero: '1234', birth: '2000-01-01', novo_convertido: 'Não' })).status, 400);
     const create = await call('POST', '/financas', tokenA, { tipo: 'Entrada', categoria: 'Oferta Simples', valor: '10.25', descricao: 'teste', data: '2026-10-05', id_igreja: a });
     assert.equal(create.status, 201, String(create.body));
     const invalidAmount = await call('POST', '/financas', tokenA, { tipo: 'Entrada', categoria: 'Oferta Simples', valor: '-1.00', descricao: 'teste', data: '2026-10-05', id_igreja: a });
@@ -107,7 +117,10 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
     const [[createdPedido]] = await db.query('SELECT id_pedido FROM pedidos WHERE id_igreja = ? ORDER BY id_pedido DESC LIMIT 1', [a]);
     assert.equal((await call('PUT', `/pedido/${createdPedido.id_pedido}/responder`, tokenB, { status_pedido: 'Entregue', data_entrega: '2026-10-06' })).status, 403);
     assert.equal((await call('PUT', `/pedido/${createdPedido.id_pedido}/responder`, tokenA, { status_pedido: 'Entregue', data_entrega: '2026-10-06' })).status, 200);
-    assert.equal((await call('PUT', `/pedido/${createdPedido.id_pedido}/responder`, tokenA, { status_pedido: 'Recusado', motivo_recusa: 'repetido' })).status, 400);
+    assert.equal((await call('PUT', `/pedido/${createdPedido.id_pedido}/responder`, tokenA, { status_pedido: 'Recusado', motivo_recusa: 'repetido' })).status, 409);
+    assert.equal((await call('PUT', `/pedido/${createdPedido.id_pedido}/${a}`, tokenA, { nome_produto: 'x', categoria_produto: 'y', quantidade: 2, data_pedido: '2026-10-05' })).status, 409);
+    const recebidos = await call('GET', '/pedido/recebidos', tokenA);
+    assert.equal(recebidos.status, 200); assert.ok(recebidos.body.some(p => p.id_pedido === createdPedido.id_pedido && p.nome_igreja));
     assert.equal((await call('DELETE', `/cadastro/${userIds[1].id}`, tokenA)).status, 403);
     assert.equal((await call('GET', `/membro/${memberIds[0]}`, tokenA)).status, 201);
     assert.equal((await call('GET', `/membro/${memberIds[1]}`, tokenA)).status, 403);
@@ -125,6 +138,9 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
     await db.query('UPDATE user SET senha = ? WHERE id_user = ?', [await hashPassword('senha-nova-para-teste'), userIds[0].id]);
     assert.equal((await call('GET', `/financas/${a}`, tokenA)).status, 401);
     const [report] = await db.query('INSERT INTO bug_reports(id_user,motivo,descricao,data_criacao) VALUES (?,?,?,NOW())', [userIds[1].id, 'teste', 'teste']);
+    // Sem outro pastor a exclusão é bloqueada; com um segundo pastor ela é permitida.
+    assert.equal((await call('DELETE', `/cadastro/${userIds[1].id}`, tokenB)).status, 409);
+    await db.query('INSERT INTO user(cod_membro,nome,email,senha,birth,cargo,id_igreja) VALUES (?,?,?,?,?,?,?)', ['test-B2', 'Pastor B2', `security-${Date.now()}-B2@example.invalid`, await hashPassword('senha-de-teste-123'), '2000-01-01', 'Pastor', b]);
     assert.equal((await call('DELETE', `/cadastro/${userIds[1].id}`, tokenB)).status, 200);
     const [[removed]] = await db.query('SELECT COUNT(*) AS total FROM user WHERE id_user = ?', [userIds[1].id]);
     assert.equal(removed.total, 0);

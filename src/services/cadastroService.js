@@ -1,5 +1,6 @@
 import banco from '../repository/connection.js';
 import { hashPassword } from '../helpers/password.js';
+import { assertAnotherPastor, isPastorRole } from '../helpers/pastorGuard.js';
 
 async function createUser(cod_membro, nome, email, senha, birth, cargo, id_igreja) {
 
@@ -55,9 +56,17 @@ async function updateUserPartial(id_user, userData, id_igreja) {
 
     const conn = await banco.connect();
     try {
+        await conn.beginTransaction();
+        const [[target]] = await conn.query('SELECT cargo FROM user WHERE id_user = ? AND id_igreja = ? FOR UPDATE', [id_user, id_igreja]);
+        if (!target) throw new Error('Usuário não encontrado.');
+        if ('cargo' in userData && isPastorRole(target.cargo) && !isPastorRole(userData.cargo)) {
+            await assertAnotherPastor(conn, id_igreja, id_user);
+        }
         const [result] = await conn.query(sql, values);
         if (result.affectedRows !== 1) throw new Error('Usuário não encontrado.');
+        await conn.commit();
     } catch (error) {
+        await conn.rollback();
         throw error;
     } finally {
         await conn.end();
@@ -161,8 +170,9 @@ async function deleteUser(id_user, id_igreja) {
     const conn = await banco.connect();
     try {
         await conn.beginTransaction();
-        const [[target]] = await conn.query('SELECT id_user FROM user WHERE id_user = ? AND id_igreja = ? FOR UPDATE', [id_user, id_igreja]);
+        const [[target]] = await conn.query('SELECT id_user, cargo FROM user WHERE id_user = ? AND id_igreja = ? FOR UPDATE', [id_user, id_igreja]);
         if (!target) throw new Error('Usuário não encontrado.');
+        if (isPastorRole(target.cargo)) await assertAnotherPastor(conn, id_igreja, id_user);
         await conn.query('UPDATE bug_reports SET id_user = NULL WHERE id_user = ?', [id_user]);
         const [result] = await conn.query('DELETE FROM user WHERE id_user = ? AND id_igreja = ?', [id_user, id_igreja]);
         if (result.affectedRows !== 1) throw new Error('Usuário não removido.');

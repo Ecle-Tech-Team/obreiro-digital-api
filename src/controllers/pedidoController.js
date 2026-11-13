@@ -1,5 +1,5 @@
 import express from 'express';
-import db from '../services/pedidoServices.js';
+import db, { PedidoError } from '../services/pedidoServices.js';
 import verifyJWT from '../middlewares/jwt.js';
 import securityRepository from '../repository/securityRepository.js';
 
@@ -31,6 +31,14 @@ routes.get('/igreja', async (request, response) => {
     }
 });
 
+routes.get('/recebidos', async (request, response) => {
+    try {
+        response.status(200).json(await db.selectPedidosRecebidos(request.user.id_igreja));
+    } catch (error) {
+        response.status(500).json({ message: 'Erro interno.' });
+    }
+});
+
 routes.get('/:id_igreja', async (request, response) => {
     try {
         const { id_igreja } = request.params;
@@ -51,20 +59,24 @@ routes.put('/:id_pedido/responder', async (request, response) => {
     try {
         const { id_pedido } = request.params;
         const { status_pedido, data_entrega, motivo_recusa } = request.body;
-        await db.responderPedido(id_pedido, status_pedido, data_entrega, motivo_recusa, request.user.id_igreja);
+        await db.responderPedido(id_pedido, status_pedido, data_entrega, motivo_recusa);
         response.status(200).send({ message: "Resposta do pedido registrada com sucesso." });
-    } catch (error) { response.status(400).send({ message: 'Pedido não pôde ser respondido.' }); }
+    } catch (error) {
+        if (error instanceof PedidoError) return response.status(error.status).json({ message: error.message });
+        response.status(500).json({ message: 'Erro interno.' });
+    }
 });
 
 routes.put('/:id_pedido/:id_igreja', async (request, response) => {
     try {
         const { id_pedido, id_igreja } = request.params;
-        const { nome_produto, categoria_produto, quantidade, data_pedido, status_pedido } = request.body;
+        const { nome_produto, categoria_produto, quantidade, data_pedido } = request.body;
 
-        await db.updatePedidos(id_pedido, nome_produto, categoria_produto, quantidade, data_pedido, status_pedido, id_igreja);
+        await db.updatePedidos(id_pedido, nome_produto, categoria_produto, quantidade, data_pedido, id_igreja);
 
         response.status(200).send({ message: "Pedido atualizado com sucesso." });
     } catch (error) {
+        if (error instanceof PedidoError) return response.status(error.status).json({ message: error.message });
         response.status(500).send('Erro interno.');
     }
 });

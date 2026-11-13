@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createMovementService } from '../src/controllers/movimentacaoController.js';
+import { LastPastorError } from '../src/helpers/pastorGuard.js';
 
-function database(owner, destinationParent = 30) {
+function database(owner, destinationParent = 30, { cargo = 'Obreiro', otherPastors = 1 } = {}) {
   const calls = [];
   const conn = {
     beginTransaction: async () => calls.push('begin'),
@@ -11,7 +12,9 @@ function database(owner, destinationParent = 30) {
     end: async () => calls.push('end'),
     query: async (sql, values) => {
       calls.push([sql, values]);
+      if (sql.startsWith('SELECT id_igreja, cargo FROM user')) return [[{ id_igreja: owner, cargo }]];
       if (sql.startsWith('SELECT id_igreja FROM')) return [[{ id_igreja: owner }]];
+      if (sql.includes('cargo IN')) return [Array.from({ length: otherPastors }, (_, i) => ({ id_user: 900 + i }))];
       if (sql.startsWith('SELECT id_igreja, id_matriz FROM igreja')) return [[
         { id_igreja: owner, id_matriz: owner === 30 ? null : 30 },
         { id_igreja: values[1], id_matriz: destinationParent },
@@ -34,4 +37,17 @@ test('movimentação rejeita igreja alheia e desfaz transação', async () => {
   await assert.rejects(createMovementService(db).moveUser(101, 21, 30));
   assert.ok(db.calls.includes('rollback'));
   assert.ok(!db.calls.some(call => Array.isArray(call) && call[0].startsWith('UPDATE user')));
+});
+
+test('movimentação não deixa a igreja de origem sem pastor', async () => {
+  const db = database(31, 30, { cargo: 'Pastor', otherPastors: 0 });
+  await assert.rejects(createMovementService(db).moveUser(101, 32, 30), LastPastorError);
+  assert.ok(db.calls.includes('rollback'));
+  assert.ok(!db.calls.some(call => Array.isArray(call) && call[0].startsWith('UPDATE user')));
+});
+
+test('movimentação de pastor é permitida quando a origem tem outro pastor', async () => {
+  const db = database(31, 30, { cargo: 'Pastor', otherPastors: 1 });
+  await createMovementService(db).moveUser(101, 32, 30);
+  assert.ok(db.calls.includes('commit'));
 });
