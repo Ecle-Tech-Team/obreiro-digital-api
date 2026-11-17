@@ -21,7 +21,9 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
   const [[reportColumn]] = await db.query("SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'bug_reports' AND COLUMN_NAME = 'id_user'", [process.env.DB_NAME]);
   assert.equal(reportColumn?.IS_NULLABLE, 'YES', 'Banco de teste deve conter a migration 001.');
   const app = express(); app.use(express.json());
-  app.use((req, res, next) => (req.path === '/login' && req.method === 'POST') ? next() : verifyJWT(req, res, next));
+  // Mesmas rotas públicas da API (index.js) usadas neste teste.
+  const isPublic = req => req.method === 'POST' && (req.path === '/login' || req.path === '/convite/validar' || (req.path === '/cadastro' && !!req.body?.convite_token));
+  app.use((req, res, next) => isPublic(req) ? next() : verifyJWT(req, res, next));
   app.use(createSecurityGate(securityRepository)); app.use(routes);
   const server = createServer(app);
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -138,6 +140,37 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
     await db.query('UPDATE user SET senha = ? WHERE id_user = ?', [await hashPassword('senha-nova-para-teste'), userIds[0].id]);
     assert.equal((await call('GET', `/financas/${a}`, tokenA)).status, 401);
     const [report] = await db.query('INSERT INTO bug_reports(id_user,motivo,descricao,data_criacao) VALUES (?,?,?,NOW())', [userIds[1].id, 'teste', 'teste']);
+    // Filial: o Pastor Matriz cria a igreja e convida o pastor por link de uso único.
+    const pmEmail = `pm-${Date.now()}@example.invalid`;
+    await db.query('INSERT INTO user(cod_membro,nome,email,senha,birth,cargo,id_igreja) VALUES (?,?,?,?,?,?,?)', ['pm', 'Pastor Matriz', pmEmail, await hashPassword('senha-de-teste-123'), '2000-01-01', 'Pastor Matriz', a]);
+    const pmToken = sessionToken((await call('POST', '/login', null, { email: pmEmail, senha: 'senha-de-teste-123' })).setCookie);
+    const filialData = { nome: 'Filial Teste', cnpj: '00.000.000/0002-00', data_fundacao: '2020-02-02', setor: 'Norte', ministerio: 'Teste', cep: '01001000', endereco: 'Rua B', bairro: 'Centro', cidade: 'São Paulo' };
+    assert.equal((await call('POST', '/igreja/filial', tokenB, filialData)).status, 403); // Pastor comum não cria filial
+    const filial = await call('POST', '/igreja/filial', pmToken, filialData);
+    assert.equal(filial.status, 201, JSON.stringify(filial.body));
+    const idFilial = filial.body.id_igreja; churchIds.push(idFilial);
+    const [[filialRow]] = await db.query('SELECT id_matriz FROM igreja WHERE id_igreja = ?', [idFilial]);
+    assert.equal(filialRow.id_matriz, a);
+    const [[filialSaldo]] = await db.query('SELECT COUNT(*) AS total FROM saldo WHERE id_igreja = ?', [idFilial]);
+    assert.equal(filialSaldo.total, 1);
+    const listed = await call('GET', '/igreja/filiais', pmToken);
+    assert.ok(listed.body.some(row => row.id_igreja === idFilial && row.total_pastores === 0));
+    const invite1 = await call('POST', '/convite', pmToken, { id_igreja: idFilial });
+    assert.equal(invite1.status, 201); assert.ok(invite1.body.token.length >= 40);
+    const [[storedInvite]] = await db.query('SELECT token_hash FROM convites WHERE id_igreja = ? LIMIT 1', [idFilial]);
+    assert.notEqual(storedInvite.token_hash, invite1.body.token); // só o hash é guardado
+    assert.equal((await call('POST', '/convite/validar', null, { token: invite1.body.token })).body.igreja, 'Filial Teste');
+    const invite2 = await call('POST', '/convite', pmToken, { id_igreja: idFilial });
+    assert.equal((await call('POST', '/convite/validar', null, { token: invite1.body.token })).status, 404); // convite anterior revogado
+    assert.equal((await call('POST', '/convite', tokenB, { id_igreja: idFilial })).status, 403); // outra igreja
+    const pastorFilial = { cod_membro: 'pf', nome: 'Pastor Filial', email: `pf-${Date.now()}@example.invalid`, birth: '1990-01-01' };
+    assert.equal((await call('POST', '/cadastro', null, { ...pastorFilial, senha: 'curta', convite_token: invite2.body.token })).status, 400);
+    assert.equal((await call('POST', '/cadastro', null, { ...pastorFilial, senha: 'senha-do-pastor-123', convite_token: invite2.body.token })).status, 201);
+    const [[newPastor]] = await db.query('SELECT cargo, id_igreja FROM user WHERE email = ?', [pastorFilial.email]);
+    assert.deepEqual({ ...newPastor }, { cargo: 'Pastor', id_igreja: idFilial });
+    assert.equal((await call('POST', '/login', null, { email: pastorFilial.email, senha: 'senha-do-pastor-123' })).status, 200);
+    assert.equal((await call('POST', '/cadastro', null, { ...pastorFilial, email: 'outro@example.invalid', senha: 'senha-do-pastor-123', convite_token: invite2.body.token })).status, 404); // uso único
+    assert.equal((await call('POST', '/convite', pmToken, { id_igreja: idFilial })).status, 409); // filial já tem pastor
     // Sem outro pastor a exclusão é bloqueada; com um segundo pastor ela é permitida.
     assert.equal((await call('DELETE', `/cadastro/${userIds[1].id}`, tokenB)).status, 409);
     await db.query('INSERT INTO user(cod_membro,nome,email,senha,birth,cargo,id_igreja) VALUES (?,?,?,?,?,?,?)', ['test-B2', 'Pastor B2', `security-${Date.now()}-B2@example.invalid`, await hashPassword('senha-de-teste-123'), '2000-01-01', 'Pastor', b]);
@@ -154,6 +187,7 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
       await db.query('DELETE FROM financas WHERE id_igreja = ?', [churchId]);
       await db.query('DELETE FROM pedidos WHERE id_igreja = ?', [churchId]);
       await db.query('DELETE FROM saldo WHERE id_igreja = ?', [churchId]);
+      await db.query('DELETE FROM convites WHERE id_igreja = ?', [churchId]);
       await db.query('DELETE FROM bug_reports WHERE id_user IN (SELECT id_user FROM user WHERE id_igreja = ?)', [churchId]);
       await db.query('DELETE FROM user WHERE id_igreja = ?', [churchId]);
       await db.query('DELETE FROM igreja WHERE id_igreja = ?', [churchId]);

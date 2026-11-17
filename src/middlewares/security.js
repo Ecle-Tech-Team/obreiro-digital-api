@@ -16,7 +16,14 @@ export function createSecurityGate(repository) {
       const parts = request.path.split('/').filter(Boolean);
       const [module, first, second] = parts;
       if (!module || (module === 'login' && first !== 'logout') || module === 'cep' || module === 'recuperarLogin') return next();
-      if (module === 'igreja' && request.method === 'POST' && !request.user) return next();
+      // Cadastro público de igreja: só o caminho exato /igreja (filiais exigem login).
+      if (module === 'igreja' && request.method === 'POST' && parts.length === 1 && !request.user) return next();
+      if (module === 'convite' && request.method === 'POST' && first === 'validar' && parts.length === 2) return next();
+      if (module === 'cadastro' && request.method === 'POST' && !request.user && request.body?.convite_token) {
+        // O convite é conferido e consumido dentro da transação que cria a conta.
+        request.inviteToken = String(request.body.convite_token);
+        return next();
+      }
       if (module === 'cadastro' && request.method === 'POST' && !request.user) {
         let churchId;
         try { churchId = verifyRegistrationToken(request.body.registration_token); }
@@ -100,7 +107,16 @@ export function createSecurityGate(repository) {
         if (first === 'membros' || first === 'igreja') return next();
         return sameChurch(first);
       }
+      if (module === 'convite') {
+        // Só o Pastor Matriz gera convites; o serviço confere se a filial é dele.
+        return request.method === 'POST' && parts.length === 1 && user.cargo === 'Pastor Matriz' ? next() : deny();
+      }
       if (module === 'igreja') {
+        if (request.method === 'POST' && first === 'filial' && parts.length === 2) {
+          const church = await repository.getChurch(own);
+          return user.cargo === 'Pastor Matriz' && church && church.id_matriz == null ? next() : deny();
+        }
+        if (request.method === 'GET' && first === 'filiais' && parts.length === 2) return matriz(user) ? next() : deny();
         if (request.method === 'GET' && parts.length === 1) return next();
         if (first === 'subordinadasUser') return Number(second) === Number(user.id_user) && matriz(user) ? next() : deny();
         if (first === 'subordinadas' || first === 'count') return Number(first === 'count' ? parts[3] : second) === own && matriz(user) ? next() : deny();

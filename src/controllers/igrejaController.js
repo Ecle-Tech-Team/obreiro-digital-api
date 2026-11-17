@@ -3,6 +3,7 @@ import db from '../services/igrejaServices.js';
 import verifyJWT from '../middlewares/jwt.js';
 import { generateRegistrationToken } from '../helpers/userFeatures.js';
 import securityRepository from '../repository/securityRepository.js';
+import filiais, { FilialError } from '../services/filialServices.js';
 
 const routes = express.Router();
 
@@ -26,6 +27,26 @@ routes.post('/', async (request, response) => {
         response.status(201).json({ message: 'Cadastro da igreja realizado com sucesso.', id_igreja, nome, registration_token: generateRegistrationToken(id_igreja) });
     } catch (error) {
         response.status(500).send('Erro interno.');
+    }
+});
+
+// Pastor Matriz cria uma filial ligada à sua igreja.
+routes.post('/filial', async (request, response) => {
+    try {
+        const id_igreja = await filiais.createFilial(request.user.id_igreja, request.body);
+        response.status(201).json({ message: 'Filial cadastrada.', id_igreja });
+    } catch (error) {
+        if (error instanceof FilialError) return response.status(error.status).json({ message: error.message });
+        response.status(500).json({ message: 'Erro interno.' });
+    }
+});
+
+// Filiais da matriz com a situação do pastor (ativo, convite pendente ou sem pastor).
+routes.get('/filiais', async (request, response) => {
+    try {
+        response.status(200).json(await filiais.listFiliais(request.user.id_igreja));
+    } catch (error) {
+        response.status(500).json({ message: 'Erro interno.' });
     }
 });
 

@@ -147,3 +147,23 @@ test('pedido é respondido pela igreja responsável (matriz) e nunca pela filial
   assert.deepEqual(await runRequest('GET', '/pedido/recebidos', 5), { status: 200, writes: 1 });
   assert.deepEqual(await runRequest('GET', '/pedido/recebidos', 3), { status: 403, writes: 0 });
 });
+
+test('só o Pastor Matriz de uma matriz cria filiais e convida pastores', async () => {
+  // Usuário 5: Pastor Matriz da igreja 30 (sem matriz). Usuário 4: Obreiro Matriz. Usuário 1: Pastor da filial 10.
+  assert.deepEqual(await runRequest('POST', '/igreja/filial', 5, { nome: 'Filial' }), { status: 200, writes: 1 });
+  assert.deepEqual(await runRequest('POST', '/igreja/filial', 4, { nome: 'Filial' }), { status: 403, writes: 0 });
+  assert.deepEqual(await runRequest('POST', '/igreja/filial', 1, { nome: 'Filial' }), { status: 403, writes: 0 });
+  assert.deepEqual(await runRequest('POST', '/igreja/filial', undefined, { nome: 'Filial' }), { status: 401, writes: 0 });
+  assert.deepEqual(await runRequest('POST', '/convite', 5, { id_igreja: 31 }), { status: 200, writes: 1 });
+  assert.deepEqual(await runRequest('POST', '/convite', 4, { id_igreja: 31 }), { status: 403, writes: 0 });
+  assert.deepEqual(await runRequest('POST', '/convite', 2, { id_igreja: 31 }), { status: 403, writes: 0 });
+  assert.deepEqual(await runRequest('GET', '/igreja/filiais', 4), { status: 200, writes: 1 });
+  assert.deepEqual(await runRequest('GET', '/igreja/filiais', 1), { status: 403, writes: 0 });
+});
+
+test('validar e aceitar convite são públicos; o resto exige login', async () => {
+  assert.deepEqual(await runRequest('POST', '/convite/validar', undefined, { token: 'x' }), { status: 200, writes: 1 });
+  assert.deepEqual(await runRequest('POST', '/cadastro', undefined, { convite_token: 'x' }), { status: 200, writes: 1 });
+  assert.deepEqual(await runRequest('GET', '/convite/validar', undefined), { status: 401, writes: 0 });
+  assert.deepEqual(await runRequest('POST', '/convite', undefined, { id_igreja: 31 }), { status: 401, writes: 0 });
+});

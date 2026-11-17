@@ -53,10 +53,13 @@ const limits = {
     igreja: createRateLimiter({ max: 5, windowMs: 60 * 60_000, store: incrementRateLimit }),
     cep: createRateLimiter({ max: 30, windowMs: 60 * 60_000, store: incrementRateLimit }),
     report: createRateLimiter({ max: 5, windowMs: 60 * 60_000, store: incrementRateLimit }),
+    convite: createRateLimiter({ max: 30, windowMs: 60 * 60_000, store: incrementRateLimit }),
 };
 api.use((request, response, next) => {
     if (request.method !== 'POST') return next();
     const route = request.path.split('/')[1];
+    // O limite de igreja vale para o cadastro público; a criação de filiais exige login.
+    if (route === 'igreja' && request.path !== '/igreja') return next();
     return limits[route] ? limits[route](request, response, next) : next();
 });
 
@@ -65,7 +68,8 @@ api.use((request, response, next) => {
         || (request.path.startsWith('/recuperarLogin') && request.method === 'POST')
         || (request.path.startsWith('/cep/') && request.method === 'POST')
         || (request.path === '/igreja' && request.method === 'POST')
-        || (request.path === '/cadastro' && request.method === 'POST' && !!request.body?.registration_token);
+        || (request.path === '/convite/validar' && request.method === 'POST')
+        || (request.path === '/cadastro' && request.method === 'POST' && (!!request.body?.registration_token || !!request.body?.convite_token));
     if (publicRoute) return next();
     return verifyJWT(request, response, next);
 });
