@@ -172,6 +172,21 @@ CREATE TABLE bug_reports (
 );
 
 
+-- CONVITES de pastor de filial (uso único, só o hash do código)
+CREATE TABLE convites (
+  id_convite INT AUTO_INCREMENT PRIMARY KEY,
+  token_hash CHAR(64) NOT NULL UNIQUE,
+  id_igreja INT NOT NULL,
+  criado_por INT NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expira_em DATETIME NOT NULL,
+  usado_em DATETIME NULL,
+  revogado_em DATETIME NULL,
+  INDEX idx_convites_igreja (id_igreja),
+  FOREIGN KEY (id_igreja) REFERENCES igreja(id_igreja),
+  FOREIGN KEY (criado_por) REFERENCES user(id_user) ON DELETE SET NULL
+);
+
 -- MIGRATIONS: este schema já inclui todas as migrations abaixo.
 -- Novas migrations são aplicadas com "npm run migrate" na API.
 CREATE TABLE schema_migrations (
@@ -184,4 +199,5 @@ INSERT INTO schema_migrations (name) VALUES
     ('003_session_version.sql'),
     ('004_rate_limits.sql'),
     ('005_unique_balance_church.sql'),
-    ('006_member_phone_text.sql');
+    ('006_member_phone_text.sql'),
+    ('007_convites.sql');

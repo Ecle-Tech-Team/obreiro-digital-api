@@ -14,6 +14,7 @@ import consultCep from './helpers/cep.js';
 import recLogin from './controllers/recoverLogin.js';
 import aviso from './controllers/avisosController.js';
 import mover from  './controllers/movimentacaoController.js';
+import convite from './controllers/conviteController.js';
 
 const route = express();
 
@@ -32,6 +33,7 @@ route.use('/recuperarLogin', recLogin);
 route.use('/report', report);
 route.use('/avisos', aviso);
 route.use('/mover', mover)
+route.use('/convite', convite);
 
 //http://localhost:3333/(routes)
 

@@ -5,6 +5,7 @@ import sendEmail from '../services/emailServices.js';
 import securityRepository from '../repository/securityRepository.js';
 import { verifyPassword } from '../helpers/password.js';
 import { LastPastorError } from '../helpers/pastorGuard.js';
+import filiais, { FilialError } from '../services/filialServices.js';
 
 const routes = express.Router();
 
@@ -12,7 +13,9 @@ routes.post('/', async (request, response) => {
     try {
         const{ cod_membro, nome, email, senha, birth, cargo, id_igreja } = request.body;
 
-        if (request.bootstrapChurchId) {
+        if (request.inviteToken) {
+            await filiais.acceptInvite(request.inviteToken, { cod_membro, nome, email, senha, birth });
+        } else if (request.bootstrapChurchId) {
             await db.createFirstUser(cod_membro, nome, email, senha, birth, request.bootstrapChurchId);
         } else {
             await db.createUser(cod_membro, nome, email, senha, birth, cargo, request.user.id_igreja);
@@ -21,6 +24,7 @@ routes.post('/', async (request, response) => {
         response.status(201).send({message: "Cadastro realizado com sucesso."})
 
     } catch (error) {
+        if (error instanceof FilialError) return response.status(error.status).json({ message: error.message });
         response.status(500).send('Erro interno.');
     }
 });

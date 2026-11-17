@@ -19,6 +19,8 @@ function getPool() {
         queueLimit: 100,
         // Colunas DATE saem como 'AAAA-MM-DD' (sem hora nem fuso), para o dia nunca mudar no caminho.
         dateStrings: ['DATE'],
+        // DATETIME é gravado e lido em UTC, independente do fuso da máquina da API.
+        timezone: 'Z',
     });
     return pool;
 }
