@@ -19,12 +19,15 @@ async function createReport(id_user, motivo, descricao, nome_user, email_user) {
 
     try {
         await conn.query(sql, values);
-
-        await emailServices.sendReportEmail(nome_user, email_user, motivo, descricao, new Date(), id_user);
-    } catch (error) {
-        throw error;
     } finally {
         await conn.end();
+    }
+
+    // O relato já foi salvo; uma falha no aviso por email não deve fazer o usuário reenviar.
+    try {
+        await emailServices.sendReportEmail(nome_user, email_user, motivo, descricao, new Date(), id_user);
+    } catch (error) {
+        console.error("Relato salvo, mas o aviso por email falhou:", error?.code || error?.message);
     }
 }
 
