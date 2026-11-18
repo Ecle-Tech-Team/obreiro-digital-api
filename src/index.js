@@ -8,6 +8,7 @@ import { createRateLimiter } from './middlewares/rateLimit.js';
 import { incrementRateLimit } from './repository/rateLimitStore.js';
 import { tokenSecret } from './helpers/tokenSecret.js';
 import database from './repository/connection.js';
+import { originAllowed } from './helpers/origin.js';
 
 tokenSecret();
 
@@ -38,13 +39,13 @@ api.get('/health', async (_request, response) => {
 
 api.use(express.json({ limit: '100kb' }));
 
-const origins = (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',').map(origin => origin.trim());
-api.use(cors({ credentials: true, origin(origin, callback) {
-    if (!origin || origins.includes(origin)) return callback(null, true);
+api.use(cors((request, callback) => {
+    const origin = request.headers.origin;
+    if (!origin || originAllowed(request, origin)) return callback(null, { credentials: true, origin: true });
     const error = new Error('Origem não permitida.');
     error.status = 403;
     return callback(error);
-} }));
+}));
 
 const limits = {
     login: createRateLimiter({ max: 10, windowMs: 15 * 60_000, store: incrementRateLimit }),

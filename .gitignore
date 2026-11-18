@@ -132,3 +132,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Deploy: segredos e backups do servidor
+deploy/.env
+deploy/backups/
