@@ -55,8 +55,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?defina no .env}
       JWT_SECRET: ${JWT_SECRET:?defina no .env}
       # O site chama a API no mesmo endereço (/api): a própria origem já é aceita.
-      # Liste aqui só origens extras (ex.: outro domínio), separadas por vírgula.
-      CORS_ORIGINS: ${APP_URL:-http://localhost:${LAN_PORT:-8080}}
+      # CORS_ORIGINS no .env lista origens extras (ex.: http://localhost:3000 do npm run dev).
+      CORS_ORIGINS: ${CORS_ORIGINS:-${APP_URL:-http://localhost:${LAN_PORT:-8080}}}
       # Secure só quando o acesso veio por HTTPS (túnel); na rede local o acesso é HTTP.
       COOKIE_SECURE: auto
       # Só o nginx (rede interna do compose) fala com a API; ele informa IP e protocolo reais.
