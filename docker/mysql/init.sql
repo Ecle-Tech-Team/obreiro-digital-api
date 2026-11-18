@@ -187,6 +187,16 @@ CREATE TABLE convites (
   FOREIGN KEY (criado_por) REFERENCES user(id_user) ON DELETE SET NULL
 );
 
+-- RECUPERAÇÃO DE SENHA (código de 6 dígitos; só o HMAC é guardado)
+CREATE TABLE password_resets (
+  id_user INT PRIMARY KEY,
+  code_hash CHAR(64) NOT NULL,
+  expira_em DATETIME NOT NULL,
+  tentativas TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  janela_inicio DATETIME NOT NULL,
+  FOREIGN KEY (id_user) REFERENCES user(id_user) ON DELETE CASCADE
+);
+
 -- MIGRATIONS: este schema já inclui todas as migrations abaixo.
 -- Novas migrations são aplicadas com "npm run migrate" na API.
 CREATE TABLE schema_migrations (
@@ -200,4 +210,5 @@ INSERT INTO schema_migrations (name) VALUES
     ('004_rate_limits.sql'),
     ('005_unique_balance_church.sql'),
     ('006_member_phone_text.sql'),
-    ('007_convites.sql');
+    ('007_convites.sql'),
+    ('008_password_resets.sql');

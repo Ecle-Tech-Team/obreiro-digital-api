@@ -10,11 +10,14 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
   dotenv.config({ path: '../.env' });
   process.env.DB_HOST = '127.0.0.1';
   process.env.DB_PORT = process.env.INTEGRATION_DB_PORT || '3307';
+  // Emails do teste vão para uma porta fechada: falham na hora, sem sair da máquina.
+  process.env.SMTP_HOST = '127.0.0.1'; process.env.SMTP_PORT = '9';
   const { default: routes } = await import('../src/routes.js');
   const { default: verifyJWT } = await import('../src/middlewares/jwt.js');
   const { createSecurityGate } = await import('../src/middlewares/security.js');
   const { default: securityRepository } = await import('../src/repository/securityRepository.js');
   const { hashPassword } = await import('../src/helpers/password.js');
+  const { hashResetCode } = await import('../src/helpers/resetCode.js');
   const { migratePasswords } = await import('../src/scripts/migratePasswords.js');
   const { default: applicationDatabase } = await import('../src/repository/connection.js');
   const db = await mysql.createConnection({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT), user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME });
@@ -22,7 +25,7 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
   assert.equal(reportColumn?.IS_NULLABLE, 'YES', 'Banco de teste deve conter a migration 001.');
   const app = express(); app.use(express.json());
   // Mesmas rotas públicas da API (index.js) usadas neste teste.
-  const isPublic = req => req.method === 'POST' && (req.path === '/login' || req.path === '/convite/validar' || (req.path === '/cadastro' && !!req.body?.convite_token));
+  const isPublic = req => req.method === 'POST' && (req.path === '/login' || req.path === '/convite/validar' || (req.path === '/cadastro' && !!req.body?.convite_token) || req.path.startsWith('/recuperarLogin'));
   app.use((req, res, next) => isPublic(req) ? next() : verifyJWT(req, res, next));
   app.use(createSecurityGate(securityRepository)); app.use(routes);
   const server = createServer(app);
@@ -171,6 +174,28 @@ test('HTTP e MySQL: isolamento A/B, identidade e transação financeira', { skip
     assert.equal((await call('POST', '/login', null, { email: pastorFilial.email, senha: 'senha-do-pastor-123' })).status, 200);
     assert.equal((await call('POST', '/cadastro', null, { ...pastorFilial, email: 'outro@example.invalid', senha: 'senha-do-pastor-123', convite_token: invite2.body.token })).status, 404); // uso único
     assert.equal((await call('POST', '/convite', pmToken, { id_igreja: idFilial })).status, 409); // filial já tem pastor
+    // Recuperação de senha com código de 6 dígitos.
+    assert.equal((await call('POST', '/recuperarLogin', null, { email: 'ninguem@example.invalid' })).status, 202);
+    assert.equal((await call('POST', '/recuperarLogin', null, { email: pastorFilial.email })).status, 202);
+    const [[resetRow]] = await db.query('SELECT r.id_user FROM password_resets r JOIN user u ON u.id_user = r.id_user WHERE u.email = ?', [pastorFilial.email]);
+    assert.ok(resetRow, 'o pedido grava um código para a conta');
+    const knownCode = () => db.query('UPDATE password_resets SET code_hash = ? WHERE id_user = ?', [hashResetCode(resetRow.id_user, '246810'), resetRow.id_user]);
+    await knownCode();
+    const confirm = (code, newPassword = 'senha-recuperada-123') => call('POST', '/recuperarLogin/confirm', null, { email: pastorFilial.email, code, newPassword });
+    assert.equal((await confirm('246810', 'curta')).status, 400);
+    assert.equal((await confirm('24681')).status, 400);
+    for (let i = 0; i < 5; i += 1) assert.equal((await confirm('000000')).status, 400);
+    assert.equal((await confirm('246810')).status, 400, 'após 5 erros o código fica bloqueado');
+    assert.equal((await call('POST', '/recuperarLogin', null, { email: pastorFilial.email })).status, 202);
+    await knownCode();
+    assert.equal((await confirm('246810')).status, 400, 'pedir outro código não devolve as tentativas');
+    await db.query('UPDATE password_resets SET tentativas = 0, expira_em = UTC_TIMESTAMP() - INTERVAL 1 MINUTE WHERE id_user = ?', [resetRow.id_user]);
+    assert.equal((await confirm('246810')).status, 400, 'código expirado');
+    await db.query('UPDATE password_resets SET expira_em = UTC_TIMESTAMP() + INTERVAL 15 MINUTE WHERE id_user = ?', [resetRow.id_user]);
+    assert.equal((await confirm('246810')).status, 200);
+    assert.equal((await confirm('246810')).status, 400, 'uso único');
+    assert.equal((await call('POST', '/login', null, { email: pastorFilial.email, senha: 'senha-do-pastor-123' })).status, 401);
+    assert.equal((await call('POST', '/login', null, { email: pastorFilial.email, senha: 'senha-recuperada-123' })).status, 200);
     // Sem outro pastor a exclusão é bloqueada; com um segundo pastor ela é permitida.
     assert.equal((await call('DELETE', `/cadastro/${userIds[1].id}`, tokenB)).status, 409);
     await db.query('INSERT INTO user(cod_membro,nome,email,senha,birth,cargo,id_igreja) VALUES (?,?,?,?,?,?,?)', ['test-B2', 'Pastor B2', `security-${Date.now()}-B2@example.invalid`, await hashPassword('senha-de-teste-123'), '2000-01-01', 'Pastor', b]);
