@@ -1,4 +1,5 @@
 import express from 'express';
+import { cookieSecure } from '../helpers/origin.js';
 import db from '../services/loginService.js';
 import { generateToken } from '../helpers/userFeatures.js';
 
@@ -25,7 +26,7 @@ routes.post('/', async (request, response) => {
             response.cookie('od_session', token, {
                 httpOnly: true,
                 sameSite: 'lax',
-                secure: process.env.NODE_ENV === 'production',
+                secure: cookieSecure(request),
                 maxAge: 5 * 60 * 60 * 1000,
                 path: '/',
             });
@@ -65,7 +66,7 @@ routes.post('/logout', async (request, response) => {
     response.clearCookie('od_session', {
         httpOnly: true,
         sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
+        secure: cookieSecure(request),
         path: '/',
     });
     response.status(200).json({ message: 'Sessão encerrada.' });

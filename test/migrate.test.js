@@ -35,22 +35,22 @@ const quiet = { log: () => {} };
 test('banco antigo sem registro: não reaplica o que o schema já tem', async () => {
   const db = fakeDb({ schema: {
     columns: { 'bug_reports.id_user': 'YES', 'user.session_version': 'NO' },
-    tables: ['rate_limits', 'convites'], uniqueSaldo: true, phoneVarchar: true,
+    tables: ['rate_limits', 'convites', 'password_resets'], uniqueSaldo: true, phoneVarchar: true,
   } });
   const applied = await migrate(db, quiet);
   assert.deepEqual(applied, ['002_backfill_missing_balances.sql']); // só a idempotente roda
-  assert.equal(db.registered.length, 7);
+  assert.equal(db.registered.length, 8);
   assert.equal(db.executed.length, 1);
 });
 
 test('banco antigo parcialmente migrado: aplica só as que faltam', async () => {
   const db = fakeDb({ schema: { columns: { 'bug_reports.id_user': 'NO' } } });
   const applied = await migrate(db, quiet);
-  assert.deepEqual(applied, ['001_nullable_report_owner.sql', '002_backfill_missing_balances.sql', '003_session_version.sql', '004_rate_limits.sql', '005_unique_balance_church.sql', '006_member_phone_text.sql', '007_convites.sql']);
+  assert.deepEqual(applied, ['001_nullable_report_owner.sql', '002_backfill_missing_balances.sql', '003_session_version.sql', '004_rate_limits.sql', '005_unique_balance_church.sql', '006_member_phone_text.sql', '007_convites.sql', '008_password_resets.sql']);
 });
 
 test('banco com registro completo: nada a fazer', async () => {
-  const all = ['001_nullable_report_owner.sql', '002_backfill_missing_balances.sql', '003_session_version.sql', '004_rate_limits.sql', '005_unique_balance_church.sql', '006_member_phone_text.sql', '007_convites.sql'];
+  const all = ['001_nullable_report_owner.sql', '002_backfill_missing_balances.sql', '003_session_version.sql', '004_rate_limits.sql', '005_unique_balance_church.sql', '006_member_phone_text.sql', '007_convites.sql', '008_password_resets.sql'];
   const db = fakeDb({ hasTable: true, recorded: all });
   assert.deepEqual(await migrate(db, quiet), []);
   assert.equal(db.executed.length, 0);
@@ -59,7 +59,7 @@ test('banco com registro completo: nada a fazer', async () => {
 test('dry-run não altera o banco', async () => {
   const db = fakeDb({ schema: {} });
   const pending = await migrate(db, { ...quiet, dryRun: true });
-  assert.equal(pending.length, 7);
+  assert.equal(pending.length, 8);
   assert.equal(db.executed.length, 0);
   assert.equal(db.registered.length, 0);
 });

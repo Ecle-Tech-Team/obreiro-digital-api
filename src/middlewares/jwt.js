@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { tokenSecret } from '../helpers/tokenSecret.js';
+import { originAllowed } from '../helpers/origin.js';
 
 function verifyJWT(request, response, next) {
   const authHeader = request.headers.authorization;
@@ -13,8 +14,7 @@ function verifyJWT(request, response, next) {
     token = cookie?.slice('od_session='.length);
     if (!token) return response.status(401).send({ message: 'Token não informado!' });
     if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
-      const allowed = (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',').map(value => value.trim());
-      if (!request.headers.origin || !allowed.includes(request.headers.origin)) return response.status(403).send({ message: 'Origem não permitida.' });
+      if (!originAllowed(request, request.headers.origin)) return response.status(403).send({ message: 'Origem não permitida.' });
     }
   }
 

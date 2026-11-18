@@ -9,3 +9,5 @@ test
 coverage
 npm-debug.log*
 *.md
+deploy
+docs

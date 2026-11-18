@@ -20,6 +20,7 @@ const alreadyApplied = {
     return rows.length > 0;
   },
   '007_convites.sql': async db => !!(await table(db, 'convites')),
+  '008_password_resets.sql': async db => !!(await table(db, 'password_resets')),
   '006_member_phone_text.sql': async db => {
     const [rows] = await db.query("SELECT DATA_TYPE FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'membro' AND column_name = 'numero'");
     return rows[0]?.DATA_TYPE === 'varchar';

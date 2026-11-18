@@ -45,11 +45,14 @@ export function createFilialService(database) {
   async function listFiliais(id_matriz) {
     const conn = await database.connect();
     try {
-      const [rows] = await conn.query(`SELECT i.id_igreja, i.nome,
+      // A própria matriz vem junto (id_matriz nulo), para a tela mostrar o pastor dela também.
+      const [rows] = await conn.query(`SELECT i.id_igreja, i.nome, i.id_matriz,
           (SELECT COUNT(*) FROM user u WHERE u.id_igreja = i.id_igreja AND u.cargo IN (?)) AS total_pastores,
+          (SELECT u.nome FROM user u WHERE u.id_igreja = i.id_igreja AND u.cargo IN (?)
+             ORDER BY u.cargo = 'Pastor Matriz' DESC, u.id_user LIMIT 1) AS pastor_nome,
           (SELECT MAX(c.expira_em) FROM convites c WHERE c.id_igreja = i.id_igreja AND c.usado_em IS NULL
              AND c.revogado_em IS NULL AND c.expira_em > UTC_TIMESTAMP()) AS convite_expira_em
-        FROM igreja i WHERE i.id_matriz = ? ORDER BY i.nome`, [PASTOR_ROLES, id_matriz]);
+        FROM igreja i WHERE i.id_matriz = ? OR i.id_igreja = ? ORDER BY i.id_matriz IS NOT NULL, i.nome`, [PASTOR_ROLES, PASTOR_ROLES, id_matriz, id_matriz]);
       return rows.map(row => ({ ...row, total_pastores: Number(row.total_pastores) }));
     } finally { await conn.end(); }
   }
